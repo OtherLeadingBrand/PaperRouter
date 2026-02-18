@@ -1,0 +1,1965 @@
+{
+  "articles_and_essays": null,
+  "calendar_url": "https://www.loc.gov/item/sn87080287/?st=calendar",
+  "cite_this": {
+    "apa": "(1893, January 2)  <cite>Freeland Tribune</cite>. Retrieved from the Library of Congress, https://www.loc.gov/item/sn87080287/1893-01-02/ed-1/.",
+    "chicago": "<cite>Freeland Tribune</cite>. (Freeland, PA), Jan. 2 1893. https://www.loc.gov/item/sn87080287/1893-01-02/ed-1/.",
+    "mla": "<cite>Freeland Tribune</cite>. (Freeland, PA) 2 Jan. 1893, p. 1. Retrieved from the Library of Congress, www.loc.gov/item/sn87080287/1893-01-02/ed-1/."
+  },
+  "item": {
+    "_version_": 1747938133857533952,
+    "access_restricted": false,
+    "aka": [
+      "http://www.loc.gov/item/sn87080287/1893-01-02/ed-1/",
+      "http://www.loc.gov/resource/sn87080287/1893-01-02/ed-1/"
+    ],
+    "batch": [
+      "pst_lydia_ver01"
+    ],
+    "call_number": [
+      "Newspaper"
+    ],
+    "campaigns": [],
+    "composite_location": [
+      "0/united states/",
+      "1/united states/pennsylvania/",
+      "2/united states/pennsylvania/luzerne/",
+      "3/united states/pennsylvania/luzerne/freeland/"
+    ],
+    "contributor_names": [
+      "Penn State University Libraries; University Park, PA"
+    ],
+    "contributors": [
+      {
+        "penn state university libraries; university park, pa": "https://www.loc.gov/search/?fa=contributor:penn+state+university+libraries%3B+university+park,+pa&fo=json"
+      }
+    ],
+    "created_published": [
+      "Freeland, Pa., January 2, 1893"
+    ],
+    "date": "1893-01-02",
+    "date_issued": "1893-01-02",
+    "dates": [
+      {
+        "1893-01-02": "https://www.loc.gov/search/?dates=1893-01-02/1893-01-02&fo=json"
+      }
+    ],
+    "dates_of_publication": "1888-1921",
+    "description": [
+      "Freeland, Pa."
+    ],
+    "digitized": true,
+    "digitized_label": "Present",
+    "display_offsite": true,
+    "essay_contributor": [
+      "Penn State University Libraries, University Park, PA",
+      "Penn State University"
+    ],
+    "extract_timestamp": "2020-10-08T16:30:58.496Z",
+    "extract_urls": [
+      "file:/service/ndnp//pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/1893010201_1.xml#ndnp/pst"
+    ],
+    "format": [
+      {
+        "newspaper": "https://www.loc.gov/search/?fa=original_format:newspaper&fo=json"
+      }
+    ],
+    "genre": [
+      "Newspapers"
+    ],
+    "group": [
+      "ndnp/pst",
+      "penn-state-university-libraries-university-park-pa-awardee"
+    ],
+    "hassegments": true,
+    "id": "http://www.loc.gov/item/sn87080287/1893-01-02/ed-1/",
+    "image_url": [
+      "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0908/full/pct:6.25/0/default.jpg#h=364&w=291",
+      "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0908/full/pct:12.5/0/default.jpg#h=728&w=583"
+    ],
+    "index": 1,
+    "item": {
+      "batch": [
+        "pst_lydia_ver01"
+      ],
+      "call_number": [
+        "Newspaper"
+      ],
+      "contributor_names": [
+        "Penn State University Libraries; University Park, PA"
+      ],
+      "created_published": [
+        "Freeland, Pa., January 2, 1893"
+      ],
+      "date": "1888",
+      "date_issued": "1893-01-02",
+      "dates": [
+        "1893-01-02"
+      ],
+      "digitized_label": "Present",
+      "essay_contributor": [
+        "Penn State University Libraries, University Park, PA",
+        "Penn State University"
+      ],
+      "format": [
+        "newspaper"
+      ],
+      "genre": [
+        "Newspapers"
+      ],
+      "language": [
+        "eng"
+      ],
+      "library_of_congress_control_number": "sn87080287",
+      "location": [
+        "Freeland (Pa.)",
+        "Pennsylvania--Freeland"
+      ],
+      "medium": "4 pages",
+      "newspaper_title": [
+        "Freeland tribune."
+      ],
+      "notes": [
+        "Semiweekly, -1921",
+        "Began with June 28, 1888 issue?; ceased in 1921?",
+        "Archived issues are available in digital format from the Library of Congress Chronicling America online collection.",
+        "Description based on: Vol. 2, no. 1 (June 27, 1889)."
+      ],
+      "other_formats": [
+        "https://tile.loc.gov/storage-services/service/ndnp//pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/1893010201_1.xml",
+        "http://lccn.loc.gov/sn87080287/marcxml"
+      ],
+      "place_of_publication": "Freeland, Pa.",
+      "raw_lccn": "sn 87080287 ",
+      "reel_numbers": [
+        "00296028770"
+      ],
+      "source_group": "ndnp/pst",
+      "subjects": [
+        "Freeland (Pa.)--Newspapers",
+        "Pennsylvania--Freeland",
+        "United States--Pennsylvania--Luzerne--Freeland"
+      ],
+      "title": "Freeland tribune (Freeland, Pa.), January 2, 1893"
+    },
+    "item_type": [
+      "issue"
+    ],
+    "language": [
+      "english"
+    ],
+    "languages": [
+      {
+        "english": "https://www.loc.gov/search/?fa=language:english&fo=json"
+      }
+    ],
+    "library_of_congress_control_number": "sn87080287",
+    "location": [
+      "luzerne",
+      "freeland",
+      "united states",
+      "pennsylvania"
+    ],
+    "location_city": [
+      "freeland"
+    ],
+    "location_country": [
+      "united states"
+    ],
+    "location_county": [
+      "luzerne"
+    ],
+    "location_state": [
+      "pennsylvania"
+    ],
+    "locations": [
+      {
+        "freeland": "https://www.loc.gov/search/?fa=location:freeland&fo=json"
+      },
+      {
+        "luzerne": "https://www.loc.gov/search/?fa=location:luzerne&fo=json"
+      },
+      {
+        "pennsylvania": "https://www.loc.gov/search/?fa=location:pennsylvania&fo=json"
+      },
+      {
+        "united states": "https://www.loc.gov/search/?fa=location:united+states&fo=json"
+      }
+    ],
+    "locations_city": [
+      {
+        "freeland": "https://www.loc.gov/search/?fa=location_city:freeland&fo=json"
+      }
+    ],
+    "locations_country": [
+      {
+        "united states": "https://www.loc.gov/search/?fa=location_country:united+states&fo=json"
+      }
+    ],
+    "locations_county": [
+      {
+        "luzerne": "https://www.loc.gov/search/?fa=location_county:luzerne&fo=json"
+      }
+    ],
+    "locations_state": [
+      {
+        "pennsylvania": "https://www.loc.gov/search/?fa=location_state:pennsylvania&fo=json"
+      }
+    ],
+    "medium": "4 pages",
+    "method": "mets_filesec",
+    "mime_type": [
+      "image/jp2",
+      "application/pdf",
+      "text/xml",
+      "image/jpeg"
+    ],
+    "newspaper_title": [
+      "Freeland tribune."
+    ],
+    "notes": [
+      "Semiweekly, -1921",
+      "Began with June 28, 1888 issue?; ceased in 1921?",
+      "Archived issues are available in digital format from the Library of Congress Chronicling America online collection.",
+      "Description based on: Vol. 2, no. 1 (June 27, 1889)."
+    ],
+    "number": [
+      "sn87080287",
+      "00296028770",
+      "1"
+    ],
+    "number_edition": [
+      "1"
+    ],
+    "number_lccn": [
+      "sn87080287"
+    ],
+    "number_reel": [
+      "00296028770"
+    ],
+    "numeric_shelf_id": 189301021,
+    "online_format": [
+      "image",
+      "pdf",
+      "online text"
+    ],
+    "original_format": [
+      "newspaper"
+    ],
+    "other_formats": [
+      {
+        "label": "MODSXML Record",
+        "link": "//tile.loc.gov/storage-services/service/ndnp//pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/1893010201_1.xml"
+      },
+      {
+        "label": "MARCXML Record",
+        "link": "//lccn.loc.gov/sn87080287/marcxml"
+      }
+    ],
+    "partof": [
+      {
+        "count": 1461,
+        "title": "freeland tribune (freeland, pa.) 1888-1921",
+        "url": "https://www.loc.gov/search/?fa=partof:freeland+tribune+%28freeland,+pa.%29+1888-1921&fo=json"
+      },
+      {
+        "count": 3194579,
+        "title": "chronicling america",
+        "url": "https://www.loc.gov/collections/chronicling-america/?fo=json"
+      },
+      {
+        "count": 3215630,
+        "title": "serial and government publications division",
+        "url": "https://www.loc.gov/search/?fa=partof:serial+and+government+publications+division&fo=json"
+      }
+    ],
+    "partof_collection": [
+      "chronicling america"
+    ],
+    "partof_division": [
+      "serial and government publications division"
+    ],
+    "partof_title": [
+      "freeland tribune (freeland, pa.) 1888-1921"
+    ],
+    "place_of_publication": "Freeland, Pa.",
+    "publication_frequency": [
+      "semiweekly"
+    ],
+    "raw_lccn": "sn 87080287 ",
+    "reel_numbers": [
+      "00296028770"
+    ],
+    "resources": [
+      {
+        "files": 4,
+        "image": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0908/full/pct:6.25/0/default.jpg",
+        "url": "https://www.loc.gov/resource/sn87080287/1893-01-02/ed-1/",
+        "word_coordinates": "https://tile.loc.gov/text-services/word-coordinates-service"
+      }
+    ],
+    "rights": [
+      "<p>The Library of Congress believes that the newspapers in Chronicling America are in the public domain or have no known copyright restrictions.  Newspapers published in the United States more than 95 years ago are in the public domain in their entirety. Any newspapers in Chronicling America that were published less than 95 years ago are also believed to be in the public domain, but may contain some copyrighted third party materials. Researchers using newspapers published less than 95 years ago should be alert for modern content (for example, registered and renewed for copyright and published with notice) that may be copyrighted.  Responsibility for making an independent legal assessment of an item and securing any necessary permissions ultimately rests with persons desiring to use the item.</p>\n<p>The NEH awardee responsible for producing each digital object is presented in the Chronicling America page display, below the page image  \u2013 e.g. Image produced by the Library of Congress. For more information on current NDNP awardees, see <a href=\"https://www.loc.gov/ndnp/listawardees.html\">https://www.loc.gov/ndnp/listawardees.html</a>.</p>\n<p>For more information on Library of Congress policies and disclaimers regarding rights and reproductions, see <a href=\"https://www.loc.gov/homepage/legal.html\">https://www.loc.gov/homepage/legal.html</a></p>"
+    ],
+    "score": 14.454686,
+    "shard": "04",
+    "shelf_id": "sn87080287, 1893-01-02, Edition 1",
+    "site": [
+      "chroniclingamerica"
+    ],
+    "source_group": "ndnp/pst",
+    "subject": [
+      "newspapers",
+      "luzerne",
+      "freeland",
+      "freeland (pa.)",
+      "united states",
+      "pennsylvania"
+    ],
+    "subject_headings": [
+      "Freeland (Pa.)--Newspapers",
+      "Pennsylvania--Freeland",
+      "United States--Pennsylvania--Luzerne--Freeland"
+    ],
+    "subjects": [
+      {
+        "freeland": "https://www.loc.gov/search/?fa=subject:freeland&fo=json"
+      },
+      {
+        "freeland (pa.)": "https://www.loc.gov/search/?fa=subject:freeland+%28pa.%29&fo=json"
+      },
+      {
+        "luzerne": "https://www.loc.gov/search/?fa=subject:luzerne&fo=json"
+      },
+      {
+        "newspapers": "https://www.loc.gov/search/?fa=subject:newspapers&fo=json"
+      },
+      {
+        "pennsylvania": "https://www.loc.gov/search/?fa=subject:pennsylvania&fo=json"
+      },
+      {
+        "united states": "https://www.loc.gov/search/?fa=subject:united+states&fo=json"
+      }
+    ],
+    "timestamp": "2022-10-28T13:28:06.562Z",
+    "title": "Freeland tribune (Freeland, Pa.), January 2, 1893",
+    "type": [
+      "newspaper"
+    ],
+    "url": "https://www.loc.gov/item/sn87080287/1893-01-02/ed-1/"
+  },
+  "locations": null,
+  "method": "mets_filesec",
+  "more_like_this": [
+    {
+      "access_restricted": false,
+      "aka": [
+        "http://lccn.loc.gov/sn87080287",
+        "http://www.loc.gov/item/sn87080287/"
+      ],
+      "batch": [
+        "pst_lydia_ver01"
+      ],
+      "campaigns": [],
+      "date": "1888",
+      "description": [
+        "Semiweekly, -1921 Began with June 28, 1888 issue?; ceased in 1921? Archived issues are available in digital format from the Library of Congress Chronicling America online collection. Description based on: Vol. 2, no. 1 (June 27, 1889)."
+      ],
+      "digitized": true,
+      "extract_timestamp": "2026-02-02T13:14:55.650Z",
+      "group": [
+        "newspaper-titles",
+        "catalog-split-09",
+        "catalog",
+        "ndnp/newspapers",
+        "main-catalog-split-09",
+        "united-states-newspaper-directory"
+      ],
+      "hassegments": false,
+      "id": "http://www.loc.gov/item/sn87080287/",
+      "image_url": [],
+      "index": 1,
+      "language": [
+        "english"
+      ],
+      "latlong": [
+        41.016463,
+        -75.897468
+      ],
+      "location": [
+        "luzerne",
+        "freeland",
+        "united states",
+        "pennsylvania"
+      ],
+      "location_str": "",
+      "lonlat": [
+        -75.897468,
+        41.016463
+      ],
+      "number": [
+        "15745914",
+        "http://www.loc.gov/item/sn87080287/1889-06-27/ed-1/",
+        "sn87080287",
+        "2379-4879",
+        "pennsylvania newsp proj, luzerne cnty",
+        "2025-05-23t21:30:26",
+        "http://www.loc.gov/item/sn87080287/1903-06-29/ed-1/",
+        "1",
+        "original",
+        "online resource",
+        "2020-10-07t16:58:54.056204",
+        "2025-06-25t14:24:06",
+        "1460"
+      ],
+      "original_format": [
+        "newspaper"
+      ],
+      "partof": [
+        "chronicling america",
+        "freeland tribune (freeland, pa.) 1888-1921",
+        "catalog",
+        "serial and government publications division",
+        "directory of u.s. newspapers in american libraries"
+      ],
+      "publication_frequency": [
+        "semiweekly"
+      ],
+      "score": 61.741528,
+      "shelf_id": "Newspaper",
+      "site": [
+        "chroniclingamerica",
+        "catalog",
+        "usnd"
+      ],
+      "subject": [
+        "newspapers",
+        "luzerne",
+        "freeland",
+        "freeland (pa.)",
+        "united states",
+        "pennsylvania"
+      ],
+      "timestamp": "2026-02-09T20:44:04.624Z",
+      "title": "Freeland tribune.",
+      "type": [
+        "title"
+      ],
+      "url": "https://www.loc.gov/item/sn87080287/"
+    },
+    {
+      "access_restricted": false,
+      "aka": [
+        "http://www.loc.gov/item/2015218785/"
+      ],
+      "campaigns": [],
+      "date": "1888",
+      "dates": [
+        "[1888 TO 1921]"
+      ],
+      "description": [
+        "Semiweekly, -1921 Began with June 28, 1888 issue? Ceased in 1921? Publisher: Tribune Company, Limited, <June 29, 1903>. Description based on: Vol. II, no. 1 (June 27, 1889); title from masthead (Chroniclingamerica.loc.gov, viewed June 3, 2015). Latest issue consulted: Vol. XV, no. 156 (June 29. 1903) (Chroniclingamerica.loc.gov, viewed June 3, 2015)."
+      ],
+      "digitized": true,
+      "extract_timestamp": "2025-11-17T19:20:52.460Z",
+      "group": [
+        "ndnp/newspapers",
+        "united-states-newspaper-directory"
+      ],
+      "hassegments": false,
+      "id": "http://www.loc.gov/item/2015218785/",
+      "image_url": [],
+      "index": 2,
+      "language": [
+        "english"
+      ],
+      "location": [
+        "luzerne",
+        "freeland",
+        "united states",
+        "pennsylvania"
+      ],
+      "number": [
+        "2015218785",
+        "2025-05-23t21:30:26",
+        "910624147",
+        "online resource",
+        "2379-4887"
+      ],
+      "original_format": [
+        "newspaper"
+      ],
+      "partof": [
+        "serial and government publications division",
+        "freeland tribune (freeland, pa.) 1888-1921 [online resource]",
+        "directory of u.s. newspapers in american libraries"
+      ],
+      "publication_frequency": [
+        "semiweekly"
+      ],
+      "score": 52.302265,
+      "shelf_id": "ISSN RECORD",
+      "site": [
+        "usnd"
+      ],
+      "subject": [
+        "newspapers",
+        "luzerne",
+        "freeland",
+        "freeland (pa.)",
+        "united states",
+        "pennsylvania"
+      ],
+      "timestamp": "2026-01-06T15:02:03.368Z",
+      "title": "Freeland tribune",
+      "type": [
+        "title"
+      ],
+      "url": "https://www.loc.gov/item/2015218785/"
+    },
+    {
+      "access_restricted": false,
+      "aka": [
+        "http://www.loc.gov/item/sn87080287/1892-07-21/ed-1/",
+        "http://www.loc.gov/resource/sn87080287/1892-07-21/ed-1/"
+      ],
+      "batch": [
+        "pst_lydia_ver01"
+      ],
+      "campaigns": [],
+      "contributor": [
+        "penn state university libraries; university park, pa"
+      ],
+      "date": "1892-07-21",
+      "dates": [
+        "1892-07-21"
+      ],
+      "description": [
+        "Freeland, Pa."
+      ],
+      "digitized": true,
+      "extract_timestamp": "2020-10-08T16:30:58.496Z",
+      "group": [
+        "ndnp/pst",
+        "penn-state-university-libraries-university-park-pa-awardee"
+      ],
+      "hassegments": true,
+      "id": "http://www.loc.gov/item/sn87080287/1892-07-21/ed-1/",
+      "image_url": [
+        "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1892072101:0714/full/pct:6.25/0/default.jpg#h=366&w=293",
+        "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1892072101:0714/full/pct:12.5/0/default.jpg#h=732&w=586"
+      ],
+      "index": 3,
+      "language": [
+        "english"
+      ],
+      "location": [
+        "luzerne",
+        "freeland",
+        "united states",
+        "pennsylvania"
+      ],
+      "mime_type": [
+        "image/jp2",
+        "application/pdf",
+        "text/xml",
+        "image/jpeg"
+      ],
+      "number": [
+        "sn87080287",
+        "00296028770",
+        "1"
+      ],
+      "numeric_shelf_id": 189207211,
+      "online_format": [
+        "image",
+        "pdf",
+        "online text"
+      ],
+      "original_format": [
+        "newspaper"
+      ],
+      "partof": [
+        "freeland tribune (freeland, pa.) 1888-1921",
+        "chronicling america",
+        "serial and government publications division"
+      ],
+      "publication_frequency": [
+        "semiweekly"
+      ],
+      "score": 29.961435,
+      "shelf_id": "sn87080287, 1892-07-21, Edition 1",
+      "site": [
+        "chroniclingamerica"
+      ],
+      "subject": [
+        "newspapers",
+        "luzerne",
+        "freeland",
+        "freeland (pa.)",
+        "united states",
+        "pennsylvania"
+      ],
+      "timestamp": "2022-10-28T13:28:06.562Z",
+      "title": "Freeland tribune (Freeland, Pa.), July 21, 1892",
+      "type": [
+        "issue"
+      ],
+      "url": "https://www.loc.gov/item/sn87080287/1892-07-21/ed-1/"
+    },
+    {
+      "access_restricted": false,
+      "aka": [
+        "http://www.loc.gov/item/sn87080287/1892-07-25/ed-1/",
+        "http://www.loc.gov/resource/sn87080287/1892-07-25/ed-1/"
+      ],
+      "batch": [
+        "pst_lydia_ver01"
+      ],
+      "campaigns": [],
+      "contributor": [
+        "penn state university libraries; university park, pa"
+      ],
+      "date": "1892-07-25",
+      "dates": [
+        "1892-07-25"
+      ],
+      "description": [
+        "Freeland, Pa."
+      ],
+      "digitized": true,
+      "extract_timestamp": "2020-10-08T16:30:58.496Z",
+      "group": [
+        "ndnp/pst",
+        "penn-state-university-libraries-university-park-pa-awardee"
+      ],
+      "hassegments": true,
+      "id": "http://www.loc.gov/item/sn87080287/1892-07-25/ed-1/",
+      "image_url": [
+        "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1892072501:0718/full/pct:6.25/0/default.jpg#h=364&w=292",
+        "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1892072501:0718/full/pct:12.5/0/default.jpg#h=729&w=584"
+      ],
+      "index": 4,
+      "language": [
+        "english"
+      ],
+      "location": [
+        "luzerne",
+        "freeland",
+        "united states",
+        "pennsylvania"
+      ],
+      "mime_type": [
+        "image/jp2",
+        "application/pdf",
+        "text/xml",
+        "image/jpeg"
+      ],
+      "number": [
+        "sn87080287",
+        "00296028770",
+        "1"
+      ],
+      "numeric_shelf_id": 189207251,
+      "online_format": [
+        "image",
+        "pdf",
+        "online text"
+      ],
+      "original_format": [
+        "newspaper"
+      ],
+      "partof": [
+        "freeland tribune (freeland, pa.) 1888-1921",
+        "chronicling america",
+        "serial and government publications division"
+      ],
+      "publication_frequency": [
+        "semiweekly"
+      ],
+      "score": 29.961435,
+      "shelf_id": "sn87080287, 1892-07-25, Edition 1",
+      "site": [
+        "chroniclingamerica"
+      ],
+      "subject": [
+        "newspapers",
+        "luzerne",
+        "freeland",
+        "freeland (pa.)",
+        "united states",
+        "pennsylvania"
+      ],
+      "timestamp": "2022-10-28T13:28:06.562Z",
+      "title": "Freeland tribune (Freeland, Pa.), July 25, 1892",
+      "type": [
+        "issue"
+      ],
+      "url": "https://www.loc.gov/item/sn87080287/1892-07-25/ed-1/"
+    },
+    {
+      "access_restricted": false,
+      "aka": [
+        "http://www.loc.gov/item/sn87080287/1892-07-28/ed-1/",
+        "http://www.loc.gov/resource/sn87080287/1892-07-28/ed-1/"
+      ],
+      "batch": [
+        "pst_lydia_ver01"
+      ],
+      "campaigns": [],
+      "contributor": [
+        "penn state university libraries; university park, pa"
+      ],
+      "date": "1892-07-28",
+      "dates": [
+        "1892-07-28"
+      ],
+      "description": [
+        "Freeland, Pa."
+      ],
+      "digitized": true,
+      "extract_timestamp": "2020-10-08T16:30:58.496Z",
+      "group": [
+        "ndnp/pst",
+        "penn-state-university-libraries-university-park-pa-awardee"
+      ],
+      "hassegments": true,
+      "id": "http://www.loc.gov/item/sn87080287/1892-07-28/ed-1/",
+      "image_url": [
+        "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1892072801:0722/full/pct:6.25/0/default.jpg#h=365&w=294",
+        "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1892072801:0722/full/pct:12.5/0/default.jpg#h=730&w=589"
+      ],
+      "index": 5,
+      "language": [
+        "english"
+      ],
+      "location": [
+        "luzerne",
+        "freeland",
+        "united states",
+        "pennsylvania"
+      ],
+      "mime_type": [
+        "image/jp2",
+        "application/pdf",
+        "text/xml",
+        "image/jpeg"
+      ],
+      "number": [
+        "sn87080287",
+        "00296028770",
+        "1"
+      ],
+      "numeric_shelf_id": 189207281,
+      "online_format": [
+        "image",
+        "pdf",
+        "online text"
+      ],
+      "original_format": [
+        "newspaper"
+      ],
+      "partof": [
+        "freeland tribune (freeland, pa.) 1888-1921",
+        "chronicling america",
+        "serial and government publications division"
+      ],
+      "publication_frequency": [
+        "semiweekly"
+      ],
+      "score": 29.961435,
+      "shelf_id": "sn87080287, 1892-07-28, Edition 1",
+      "site": [
+        "chroniclingamerica"
+      ],
+      "subject": [
+        "newspapers",
+        "luzerne",
+        "freeland",
+        "freeland (pa.)",
+        "united states",
+        "pennsylvania"
+      ],
+      "timestamp": "2022-10-28T13:28:06.562Z",
+      "title": "Freeland tribune (Freeland, Pa.), July 28, 1892",
+      "type": [
+        "issue"
+      ],
+      "url": "https://www.loc.gov/item/sn87080287/1892-07-28/ed-1/"
+    },
+    {
+      "access_restricted": false,
+      "aka": [
+        "http://www.loc.gov/item/sn87080287/1892-08-01/ed-1/",
+        "http://www.loc.gov/resource/sn87080287/1892-08-01/ed-1/"
+      ],
+      "batch": [
+        "pst_lydia_ver01"
+      ],
+      "campaigns": [],
+      "contributor": [
+        "penn state university libraries; university park, pa"
+      ],
+      "date": "1892-08-01",
+      "dates": [
+        "1892-08-01"
+      ],
+      "description": [
+        "Freeland, Pa."
+      ],
+      "digitized": true,
+      "extract_timestamp": "2020-10-08T16:30:58.496Z",
+      "group": [
+        "ndnp/pst",
+        "penn-state-university-libraries-university-park-pa-awardee"
+      ],
+      "hassegments": true,
+      "id": "http://www.loc.gov/item/sn87080287/1892-08-01/ed-1/",
+      "image_url": [
+        "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1892080101:0727/full/pct:6.25/0/default.jpg#h=366&w=293",
+        "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1892080101:0727/full/pct:12.5/0/default.jpg#h=732&w=586"
+      ],
+      "index": 6,
+      "language": [
+        "english"
+      ],
+      "location": [
+        "luzerne",
+        "freeland",
+        "united states",
+        "pennsylvania"
+      ],
+      "mime_type": [
+        "image/jp2",
+        "application/pdf",
+        "text/xml",
+        "image/jpeg"
+      ],
+      "number": [
+        "sn87080287",
+        "00296028770",
+        "1"
+      ],
+      "numeric_shelf_id": 189208011,
+      "online_format": [
+        "image",
+        "pdf",
+        "online text"
+      ],
+      "original_format": [
+        "newspaper"
+      ],
+      "partof": [
+        "freeland tribune (freeland, pa.) 1888-1921",
+        "chronicling america",
+        "serial and government publications division"
+      ],
+      "publication_frequency": [
+        "semiweekly"
+      ],
+      "score": 29.961435,
+      "shelf_id": "sn87080287, 1892-08-01, Edition 1",
+      "site": [
+        "chroniclingamerica"
+      ],
+      "subject": [
+        "newspapers",
+        "luzerne",
+        "freeland",
+        "freeland (pa.)",
+        "united states",
+        "pennsylvania"
+      ],
+      "timestamp": "2022-10-28T13:28:06.562Z",
+      "title": "Freeland tribune (Freeland, Pa.), August 1, 1892",
+      "type": [
+        "issue"
+      ],
+      "url": "https://www.loc.gov/item/sn87080287/1892-08-01/ed-1/"
+    }
+  ],
+  "next_issue": "https://www.loc.gov/item/sn87080287/1893-01-05/ed-1/?fo=json&sp=1",
+  "notice": {
+    "info": "In observance of the Federal holiday on Monday, February 16, the Jefferson Building Great Hall and \nexhibitions will be open from 10 a.m. - 5 p.m. to guests with timed-entry passes. Reading rooms \nwill be closed to researchers.\n",
+    "status": "production"
+  },
+  "options": {
+    "access_group": [
+      ""
+    ],
+    "access_group_raw": "",
+    "all": null,
+    "api_version": "1",
+    "app_context": null,
+    "application_version": "$Revision$",
+    "attribute": null,
+    "attribute!": null,
+    "attribute_map": null,
+    "cache_tags": [
+      "ndnp/pst",
+      "penn-state-university-libraries-university-park-pa-awardee",
+      "newspaper-titles",
+      "catalog-split-09",
+      "catalog",
+      "ndnp/newspapers",
+      "main-catalog-split-09",
+      "united-states-newspaper-directory",
+      "pga",
+      "catalog-split-05",
+      "popular-graphic-arts",
+      "main-catalog-split-05",
+      "catalog-split-06",
+      "main-catalog-split-06",
+      "main-catalog",
+      "catalog-split-15",
+      "main-catalog-split-15",
+      "catalog-split-07",
+      "main-catalog-split-07",
+      "gmd.mar",
+      "catalog-split-01",
+      "general-maps",
+      "main-catalog-split-01",
+      "catalog-split-08",
+      "main-catalog-split-08"
+    ],
+    "callback": null,
+    "clip": null,
+    "clip_image_width": null,
+    "clip_rotation": null,
+    "content_filter": null,
+    "content_replacement": "",
+    "count": null,
+    "dates": null,
+    "default_count": 25,
+    "delimiter": null,
+    "digital_id": null,
+    "display_level": null,
+    "display_options": {
+      "options": [
+        {
+          "field": "all",
+          "label": "All"
+        },
+        {
+          "field": "title",
+          "label": "Titles",
+          "type": "title"
+        },
+        {
+          "field": "issue",
+          "label": "Issues",
+          "type": "issue"
+        },
+        {
+          "field": "page",
+          "label": "Pages (Full Text)",
+          "type": "segment"
+        }
+      ]
+    },
+    "distance": null,
+    "downloadOption": null,
+    "duration": 1.4106719493865967,
+    "embed": [],
+    "embed!": [],
+    "error_response_status": null,
+    "excludeTerms": null,
+    "facetLimits": "",
+    "facetPrefix": null,
+    "facet_count": null,
+    "facet_style": null,
+    "field": null,
+    "form_facets": [
+      {
+        "field": "location_state",
+        "required": true,
+        "select": "multiple"
+      },
+      {
+        "field": "location_county",
+        "select": "multiple"
+      },
+      {
+        "field": "location_city",
+        "select": "multiple"
+      },
+      {
+        "field": "partof_title",
+        "select": "multiple"
+      },
+      {
+        "default": "enable",
+        "field": "subject_ethnicity",
+        "select": "multiple"
+      }
+    ],
+    "format": "json",
+    "host": "www.loc.gov",
+    "ical": false,
+    "id": "sn87080287/1893-01-02/ed-1",
+    "iiif": false,
+    "include_facets": [
+      {
+        "field": "digitized"
+      },
+      {
+        "field": "object-type",
+        "label": "Display Level"
+      },
+      {
+        "field": "original-format"
+      },
+      {
+        "field": "partof_title",
+        "label": "Title"
+      },
+      {
+        "field": "dates"
+      },
+      {
+        "field": "location_country",
+        "label": "Country"
+      },
+      {
+        "field": "location_state",
+        "label": "State/Province (Geographic Coverage)"
+      },
+      {
+        "field": "location_county",
+        "label": "County"
+      },
+      {
+        "field": "location_city",
+        "label": "City"
+      },
+      {
+        "field": "subject_ethnicity",
+        "label": "Ethnicity"
+      },
+      {
+        "field": "language",
+        "label": "Language"
+      },
+      {
+        "field": "subject"
+      },
+      {
+        "closed": true,
+        "field": "number_page",
+        "label": "Page"
+      },
+      {
+        "closed": true,
+        "field": "partof_collection",
+        "label": "Collection"
+      },
+      {
+        "closed": true,
+        "field": "online-format"
+      },
+      {
+        "closed": true,
+        "field": "contributor"
+      },
+      {
+        "closed": true,
+        "field": "partof_division",
+        "label": "Division"
+      },
+      {
+        "closed": true,
+        "field": "access-restricted"
+      },
+      {
+        "closed": true,
+        "field": "batch"
+      }
+    ],
+    "index": null,
+    "inputEncoding": "UTF-8",
+    "item": null,
+    "items": null,
+    "keys": null,
+    "language": null,
+    "latlong": null,
+    "method": "GET",
+    "newSearch": null,
+    "new_clip_url": false,
+    "onsite": false,
+    "operator": null,
+    "outputEncoding": "UTF-8",
+    "page_campaigns": [],
+    "path_info": "/item/sn87080287/1893-01-02/ed-1",
+    "port": "443",
+    "proxypath": null,
+    "query_string": "fo=json&sp=1",
+    "redirect_proxy": false,
+    "redirect_to_item": null,
+    "referer": "",
+    "region": "",
+    "release_id": 123456789,
+    "request_host": "www.loc.gov",
+    "request_params": {
+      "fo": [
+        "json"
+      ],
+      "sp": [
+        "1"
+      ]
+    },
+    "request_url": "https://www.loc.gov/item/sn87080287/1893-01-02/ed-1?fo=json&sp=1",
+    "resource": "",
+    "resource_sequence": null,
+    "scheme": "https",
+    "searchIn": null,
+    "searchTerms": "",
+    "segments": null,
+    "shards": [
+      "04"
+    ],
+    "site_date_range": "1736-09-03/1963-12-31",
+    "site_defaults": [],
+    "site_id": null,
+    "site_type": null,
+    "solrQuery": "",
+    "sortBy": null,
+    "sortOrder": null,
+    "startPage": 1,
+    "style": null,
+    "suggested": null,
+    "target": null,
+    "template": "layouts/item/layout",
+    "timestamp": 1771405526.2843552,
+    "tz_aware": null,
+    "unionFacets": "",
+    "webcast_permalink": null
+  },
+  "previous_issue": "https://www.loc.gov/item/sn87080287/1892-12-29/ed-1/?fo=json&sp=1",
+  "related_items": [
+    {
+      "access_restricted": false,
+      "aka": [
+        "https://www.loc.gov/pictures/item/2011661785/",
+        "http://www.loc.gov/item/2011661785/",
+        "http://www.loc.gov/pictures/item/2011661785/",
+        "https://www.loc.gov/pictures/collection/pga/item/2011661785/",
+        "http://www.loc.gov/pictures/collection/pga/item/2011661785/",
+        "https://hdl.loc.gov/loc.pnp/pga.03816",
+        "https://hdl.loc.gov/loc.pnp/pga.03816",
+        "https://hdl.loc.gov/loc.pnp/pga.14455",
+        "https://hdl.loc.gov/loc.pnp/pga.14455",
+        "http://www.loc.gov/resource/pga.03816/",
+        "http://www.loc.gov/resource/pga.14455/",
+        "http://lccn.loc.gov/2011661785"
+      ],
+      "campaigns": [],
+      "contributor": [
+        "hill, john",
+        "wall, william guy,approximately 1864",
+        "wall, william guy",
+        "megarey, henry i."
+      ],
+      "date": "1821",
+      "dates": [
+        "1821"
+      ],
+      "description": [
+        "1 print : aquatint ; plate 35.7 x 62.4 cm, sheet 51.8 x 70 cm | 2nd impression 1 print : aquatint, color ; sheet 45.8 x 61 cm | Print shows a little waterfall at Luzerne on the Hudson River, with two buildings on the edge of the river, possibly mills, and a larger building, possibly a house or an inn, on the hillside above the river; also a man, with a fishing pole, walking along the near bank of the river."
+      ],
+      "digitized": true,
+      "extract_timestamp": "2024-11-02T12:34:43.664Z",
+      "group": [
+        "pga",
+        "catalog-split-05",
+        "catalog",
+        "popular-graphic-arts",
+        "main-catalog-split-05"
+      ],
+      "hassegments": false,
+      "id": "http://www.loc.gov/item/2011661785/",
+      "image_url": [
+        "https://tile.loc.gov/storage-services/service/pnp/pga/03800/03816_150px.jpg#h=112&w=150",
+        "https://tile.loc.gov/storage-services/service/pnp/pga/03800/03816t.gif#h=112&w=150",
+        "https://tile.loc.gov/storage-services/service/pnp/pga/03800/03816r.jpg#h=479&w=640",
+        "https://tile.loc.gov/storage-services/service/pnp/pga/03800/03816v.jpg#h=766&w=1024"
+      ],
+      "index": 1,
+      "language": [
+        "english"
+      ],
+      "location": [
+        "luzerne",
+        "new jersey",
+        "hudson river",
+        "new york"
+      ],
+      "mime_type": [
+        "image/gif",
+        "image/jpg",
+        "image/tif"
+      ],
+      "number": [
+        "http://www.loc.gov/item/17088814",
+        "2011661785",
+        "2024-10-24t11:38:33"
+      ],
+      "online_format": [
+        "image"
+      ],
+      "original_format": [
+        "photo, print, drawing"
+      ],
+      "partof": [
+        "prints and photographs division",
+        "catalog",
+        "popular graphic arts"
+      ],
+      "score": 17.051327,
+      "shelf_id": "PGA - Hill (J.)--Hudson, no. 1 (C size) [P&P] PGA - Hill (J.)--Hudson, no. 1a 2nd impression, color.",
+      "site": [
+        "pictures",
+        "catalog"
+      ],
+      "subject": [
+        "luzerne",
+        "waterfalls",
+        "fishermen",
+        "taverns (inns)",
+        "mills",
+        "hudson river (n.y. and n.j.)",
+        "aquatints",
+        "luzerne (n.y.)",
+        "rivers",
+        "fishing",
+        "new york (state)"
+      ],
+      "timestamp": "2024-11-02T12:35:18.538Z",
+      "title": "Little falls at Luzerne",
+      "type": [
+        "still image"
+      ],
+      "url": "https://www.loc.gov/item/2011661785/"
+    },
+    {
+      "access_restricted": false,
+      "aka": [
+        "https://www.loc.gov/pictures/item/2011661786/",
+        "http://www.loc.gov/item/2011661786/",
+        "http://www.loc.gov/pictures/item/2011661786/",
+        "https://www.loc.gov/pictures/collection/pga/item/2011661786/",
+        "http://www.loc.gov/pictures/collection/pga/item/2011661786/",
+        "http://www.loc.gov/resource/pga.03815/",
+        "http://lccn.loc.gov/2011661786",
+        "https://hdl.loc.gov/loc.pnp/pga.03815"
+      ],
+      "campaigns": [],
+      "contributor": [
+        "gilley, william b.",
+        "megarey, henry i.",
+        "hill, john",
+        "wall, william guy,approximately 1864",
+        "wall, william guy"
+      ],
+      "date": "1821-01-01",
+      "dates": [
+        "1821"
+      ],
+      "description": [
+        "1 print : aquatint ; 46.2 x 63 cm (plate), 51.5 x 70 cm (sheet) | Print shows the confluence of the Sacandaga and Hudson rivers with some rapids at the junction; also shows a broad view of the landscape with pasture lands, rolling hills, and buildings near a bridge, with carriage roads and a horse-drawn carriage on the left."
+      ],
+      "digitized": true,
+      "extract_timestamp": "2021-06-28T21:30:15.665Z",
+      "group": [
+        "pga",
+        "catalog-split-06",
+        "catalog",
+        "popular-graphic-arts",
+        "main-catalog-split-06",
+        "main-catalog"
+      ],
+      "hassegments": false,
+      "id": "http://www.loc.gov/item/2011661786/",
+      "image_url": [
+        "https://tile.loc.gov/storage-services/service/pnp/pga/03800/03815_150px.jpg#h=112&w=150",
+        "https://tile.loc.gov/storage-services/service/pnp/pga/03800/03815t.gif#h=112&w=150",
+        "https://tile.loc.gov/storage-services/service/pnp/pga/03800/03815r.jpg#h=479&w=640",
+        "https://tile.loc.gov/storage-services/service/pnp/pga/03800/03815v.jpg#h=767&w=1024"
+      ],
+      "index": 2,
+      "language": [
+        "english"
+      ],
+      "location": [
+        "luzerne",
+        "hudson river",
+        "sacandaga river",
+        "new jersey",
+        "new york"
+      ],
+      "mime_type": [
+        "image/gif",
+        "image/jpg",
+        "image/tif"
+      ],
+      "number": [
+        "http://www.loc.gov/item/17088891",
+        "2011661786",
+        "2016-12-05t07:48:32"
+      ],
+      "online_format": [
+        "image"
+      ],
+      "original_format": [
+        "photo, print, drawing"
+      ],
+      "partof": [
+        "catalog",
+        "prints and photographs division",
+        "prints & photographs online catalog (library of congress)",
+        "popular graphic arts"
+      ],
+      "score": 17.051327,
+      "shelf_id": "PGA - Hill (J.)--Hudson, no. 2 (C size) [P&P]",
+      "site": [
+        "pictures",
+        "catalog"
+      ],
+      "subject": [
+        "sacandaga river (n.y.)",
+        "luzerne",
+        "meadows",
+        "carriages & coaches",
+        "hudson river (n.y. and n.j.)",
+        "aquatints",
+        "country life",
+        "luzerne (n.y.)",
+        "rivers",
+        "new york (state)",
+        "bridges"
+      ],
+      "timestamp": "2022-05-01T00:11:33.235Z",
+      "title": "The junction of the Sacandaga and Hudson Rivers",
+      "url": "https://www.loc.gov/item/2011661786/"
+    },
+    {
+      "access_restricted": false,
+      "aka": [
+        "https://www.loc.gov/pictures/item/2024640742/",
+        "http://www.loc.gov/item/2024640742/",
+        "http://www.loc.gov/pictures/item/2024640742/",
+        "https://www.loc.gov/pictures/collection/pga/item/2024640742/",
+        "http://www.loc.gov/pictures/collection/pga/item/2024640742/",
+        "https://hdl.loc.gov/loc.pnp/pga.14470",
+        "https://hdl.loc.gov/loc.pnp/pga.14470",
+        "http://www.loc.gov/resource/pga.14470/",
+        "http://lccn.loc.gov/2024640742"
+      ],
+      "campaigns": [],
+      "contributor": [
+        "wall, william guy,approximately 1864",
+        "smith, john rubens",
+        "wall, william guy"
+      ],
+      "date": "1821",
+      "dates": [
+        "1821"
+      ],
+      "description": [
+        "1 print : aquatint ; plate 46.7 x 63 cm, sheet 49.4 x 64.8 cm | Print shows the confluence of the Sacandaga and Hudson rivers with some rapids at the junction; also shows a broad view of the landscape with pasture lands, rolling hills, and buildings near a bridge, with carriage roads and a horse-drawn carriage on the left."
+      ],
+      "digitized": true,
+      "extract_timestamp": "2024-11-25T15:54:00.250Z",
+      "group": [
+        "pga",
+        "catalog-split-15",
+        "catalog",
+        "popular-graphic-arts",
+        "main-catalog-split-15"
+      ],
+      "hassegments": false,
+      "id": "http://www.loc.gov/item/2024640742/",
+      "image_url": [
+        "https://tile.loc.gov/storage-services/service/pnp/pga/14400/14470_150px.jpg#h=115&w=150",
+        "https://tile.loc.gov/storage-services/service/pnp/pga/14400/14470r.jpg#h=490&w=640",
+        "https://tile.loc.gov/storage-services/service/pnp/pga/14400/14470v.jpg#h=784&w=1024"
+      ],
+      "index": 3,
+      "language": [
+        "english"
+      ],
+      "location": [
+        "luzerne",
+        "hudson river",
+        "sacandaga river",
+        "new jersey",
+        "new york"
+      ],
+      "mime_type": [
+        "image/gif",
+        "image/jpg",
+        "image/tif"
+      ],
+      "number": [
+        "2024640742",
+        "2024-11-13t10:25:33",
+        "sheet",
+        "http://www.loc.gov/item/23920661"
+      ],
+      "online_format": [
+        "image"
+      ],
+      "original_format": [
+        "photo, print, drawing"
+      ],
+      "partof": [
+        "prints and photographs division",
+        "catalog",
+        "popular graphic arts"
+      ],
+      "score": 17.051327,
+      "shelf_id": "PGA - Smith (J.R.)--Junction of the Sacandaga (C size) [P&P]",
+      "site": [
+        "pictures",
+        "catalog"
+      ],
+      "subject": [
+        "sacandaga river (n.y.)",
+        "luzerne",
+        "meadows",
+        "hudson river (n.y. and n.j.)",
+        "aquatints",
+        "country life",
+        "luzerne (n.y.)",
+        "rivers",
+        "new york (state)",
+        "bridges"
+      ],
+      "timestamp": "2024-11-25T15:54:34.107Z",
+      "title": "The junction of the Sacandaga and Hudson Rivers",
+      "type": [
+        "still image"
+      ],
+      "url": "https://www.loc.gov/item/2024640742/"
+    },
+    {
+      "access_restricted": false,
+      "aka": [
+        "https://www.loc.gov/pictures/item/2025160151/",
+        "http://www.loc.gov/item/2025160151/",
+        "http://www.loc.gov/pictures/item/2025160151/",
+        "https://www.loc.gov/pictures/collection/pga/item/2025160151/",
+        "http://www.loc.gov/pictures/collection/pga/item/2025160151/",
+        "https://hdl.loc.gov/loc.pnp/pga.14475",
+        "https://hdl.loc.gov/loc.pnp/pga.14475",
+        "http://www.loc.gov/resource/pga.14475/",
+        "http://lccn.loc.gov/2025160151"
+      ],
+      "campaigns": [],
+      "contributor": [
+        "wall, william guy,approximately 1864",
+        "smith, john rubens",
+        "wall, william guy"
+      ],
+      "date": "1821",
+      "dates": [
+        "1821"
+      ],
+      "description": [
+        "1 print : aquatint ; plate 46.7 x 63 cm, sheet 52 x 68.8 cm | Print shows the confluence of the Sacandaga and Hudson rivers with some rapids at the junction; also shows a broad view of the landscape with pasture lands, rolling hills, and buildings near a bridge, with carriage roads and a horse-drawn carriage on the left."
+      ],
+      "digitized": true,
+      "extract_timestamp": "2025-02-08T13:42:18.873Z",
+      "group": [
+        "pga",
+        "catalog-split-07",
+        "catalog",
+        "popular-graphic-arts",
+        "main-catalog-split-07"
+      ],
+      "hassegments": false,
+      "id": "http://www.loc.gov/item/2025160151/",
+      "image_url": [
+        "https://tile.loc.gov/storage-services/service/pnp/pga/14400/14475_150px.jpg#h=113&w=150",
+        "https://tile.loc.gov/storage-services/service/pnp/pga/14400/14475r.jpg#h=483&w=640",
+        "https://tile.loc.gov/storage-services/service/pnp/pga/14400/14475v.jpg#h=773&w=1024"
+      ],
+      "index": 4,
+      "language": [
+        "english"
+      ],
+      "location": [
+        "luzerne",
+        "hudson river",
+        "sacandaga river",
+        "new jersey",
+        "new york"
+      ],
+      "mime_type": [
+        "image/gif",
+        "image/jpg",
+        "image/tif"
+      ],
+      "number": [
+        "2025-01-30t09:34:08",
+        "sheet",
+        "http://www.loc.gov/item/24011509",
+        "2025160151"
+      ],
+      "online_format": [
+        "image"
+      ],
+      "original_format": [
+        "photo, print, drawing"
+      ],
+      "partof": [
+        "prints and photographs division",
+        "catalog",
+        "popular graphic arts"
+      ],
+      "score": 17.051327,
+      "shelf_id": "PGA - Smith (J.R.)--Junction of the Sacandaga proof (D size) [P&P]",
+      "site": [
+        "pictures",
+        "catalog"
+      ],
+      "subject": [
+        "sacandaga river (n.y.)",
+        "luzerne",
+        "meadows",
+        "proofs before letters",
+        "hudson river (n.y. and n.j.)",
+        "aquatints",
+        "country life",
+        "luzerne (n.y.)",
+        "rivers",
+        "new york (state)",
+        "bridges"
+      ],
+      "timestamp": "2025-02-08T13:42:53.129Z",
+      "title": "The junction of the Sacandaga and Hudson Rivers",
+      "type": [
+        "still image"
+      ],
+      "url": "https://www.loc.gov/item/2025160151/"
+    },
+    {
+      "access_restricted": false,
+      "aka": [
+        "http://www.loc.gov/resource/g3804l.pm005830/",
+        "http://www.loc.gov/item/75694792/",
+        "https://hdl.loc.gov/loc.gmd/g3804l.pm005830",
+        "http://lccn.loc.gov/75694792"
+      ],
+      "campaigns": [],
+      "contributor": [
+        "burleigh, l. r. (lucien r.)"
+      ],
+      "date": "1888-01-01",
+      "dates": [
+        "1888"
+      ],
+      "description": [
+        "Perspective map not drawn to scale. Bird's-eye-view. LC Panoramic maps (2nd ed.), 583 Available also through the Library of Congress Web site as a raster image. Indexed for points of interest. AACR2"
+      ],
+      "digitized": true,
+      "extract_timestamp": "2021-10-30T01:51:17.764Z",
+      "group": [
+        "gmd.mar",
+        "catalog-split-01",
+        "catalog",
+        "general-maps",
+        "main-catalog-split-01",
+        "main-catalog"
+      ],
+      "hassegments": false,
+      "id": "http://www.loc.gov/item/75694792/",
+      "image_url": [
+        "https://tile.loc.gov/storage-services/service/gmd/gmd380/g3804/g3804l/pm005830.gif",
+        "https://tile.loc.gov/storage-services/service/gmd/gmd380/g3804/g3804l/pm005830.gif#h=150&w=215",
+        "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380:g3804:g3804l:pm005830/full/pct:12.5/0/default.jpg#h=696&w=996",
+        "https://tile.loc.gov/image-services/iiif/service:gmd:gmd380:g3804:g3804l:pm005830/full/pct:25/0/default.jpg#h=1392&w=1992"
+      ],
+      "index": 5,
+      "language": [
+        "english"
+      ],
+      "location": [
+        "hadley",
+        "luzerne",
+        "united states",
+        "new york",
+        "new york (state)"
+      ],
+      "mime_type": [
+        "image/gif",
+        "image/tiff",
+        "image/jpeg",
+        "image/jp2"
+      ],
+      "number": [
+        "2002-12-14t18:41:58",
+        "75694792",
+        "http://www.loc.gov/item/5424028",
+        "http://www.loc.gov/item/75694792"
+      ],
+      "online_format": [
+        "image"
+      ],
+      "original_format": [
+        "map"
+      ],
+      "partof": [
+        "panoramic maps",
+        "geography and map division",
+        "catalog",
+        "american memory",
+        "cities and towns"
+      ],
+      "score": 14.856797,
+      "shelf_id": "G3804.L78A3 1888  .B8",
+      "site": [
+        "ammem",
+        "catalog"
+      ],
+      "subject": [
+        "hadley",
+        "luzerne",
+        "hadley (n.y.)",
+        "united states",
+        "luzerne (n.y.)",
+        "aerial views",
+        "new york (state)"
+      ],
+      "timestamp": "2022-12-10T05:53:49.542Z",
+      "title": "Luzerne, N.Y. and Hadley.",
+      "type": [
+        "cartographic"
+      ],
+      "url": "https://www.loc.gov/item/75694792/"
+    },
+    {
+      "access_restricted": false,
+      "aka": [
+        "https://hdl.loc.gov/loc.gmd/g3824m.pm008040",
+        "http://www.loc.gov/item/75696502/",
+        "http://www.loc.gov/resource/g3824m.pm008040/",
+        "http://lccn.loc.gov/75696502"
+      ],
+      "campaigns": [],
+      "contributor": [
+        "downs, a. e. (albert e.)",
+        "fowler, t. m. (thaddeus mortimer)",
+        "moyer, james b."
+      ],
+      "date": "1892-01-01",
+      "dates": [
+        "1892"
+      ],
+      "description": [
+        "Perspective map not drawn to scale. Bird's-eye-view. LC Panoramic maps (2nd ed.), 804 Available also through the Library of Congress Web site as a raster image. Indexed for points of interest. AACR2: 100; 700/1; 700/2"
+      ],
+      "digitized": true,
+      "extract_timestamp": "2021-10-29T21:23:55.645Z",
+      "group": [
+        "gmd.mar",
+        "catalog-split-08",
+        "catalog",
+        "general-maps",
+        "main-catalog-split-08",
+        "main-catalog"
+      ],
+      "hassegments": false,
+      "id": "http://www.loc.gov/item/75696502/",
+      "image_url": [
+        "https://tile.loc.gov/storage-services/service/gmd/gmd382/g3824/g3824m/pm008040.gif",
+        "https://tile.loc.gov/storage-services/service/gmd/gmd382/g3824/g3824m/pm008040.gif#h=150&w=198",
+        "https://tile.loc.gov/image-services/iiif/service:gmd:gmd382:g3824:g3824m:pm008040/full/pct:12.5/0/default.jpg#h=659&w=871",
+        "https://tile.loc.gov/image-services/iiif/service:gmd:gmd382:g3824:g3824m:pm008040/full/pct:25/0/default.jpg#h=1318&w=1742"
+      ],
+      "index": 6,
+      "language": [
+        "english"
+      ],
+      "location": [
+        "mill creek",
+        "miners mills",
+        "luzerne",
+        "united states",
+        "pennsylvania"
+      ],
+      "mime_type": [
+        "image/gif",
+        "image/tiff",
+        "image/jpeg",
+        "image/jp2"
+      ],
+      "number": [
+        "75696502",
+        "2002-12-14t18:43:11",
+        "http://www.loc.gov/item/75696502",
+        "http://www.loc.gov/item/5425462"
+      ],
+      "online_format": [
+        "image"
+      ],
+      "original_format": [
+        "map"
+      ],
+      "partof": [
+        "panoramic maps",
+        "geography and map division",
+        "catalog",
+        "american memory",
+        "cities and towns"
+      ],
+      "score": 13.562575,
+      "shelf_id": "G3824.M655A3 1892  .F6",
+      "site": [
+        "ammem",
+        "catalog"
+      ],
+      "subject": [
+        "miners mills",
+        "mill creek",
+        "mill creek, pa. (luzerne)",
+        "united states",
+        "aerial views",
+        "miners mills, pa",
+        "pennsylvania"
+      ],
+      "timestamp": "2022-12-10T05:54:09.456Z",
+      "title": "Miner's Mills and Mill Creek, Luzerne County, Pa. 1892.",
+      "type": [
+        "cartographic"
+      ],
+      "url": "https://www.loc.gov/item/75696502/"
+    }
+  ],
+  "resources": [
+    {
+      "files": [
+        [
+          {
+            "height": 5824,
+            "info": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0908/info.json",
+            "mimetype": "image/jp2",
+            "size": 3396903,
+            "url": "https://tile.loc.gov/storage-services/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0908.jp2",
+            "use": "",
+            "width": 4665
+          },
+          {
+            "mimetype": "application/pdf",
+            "url": "https://tile.loc.gov/storage-services/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0908.pdf",
+            "use": ""
+          },
+          {
+            "mimetype": "text/xml",
+            "url": "https://tile.loc.gov/storage-services/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0908.xml",
+            "use": ""
+          },
+          {
+            "height": 364,
+            "levels": 1,
+            "mimetype": "image/jpeg",
+            "url": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0908/full/pct:6.25/0/default.jpg",
+            "width": 291
+          },
+          {
+            "height": 728,
+            "levels": 1,
+            "mimetype": "image/jpeg",
+            "url": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0908/full/pct:12.5/0/default.jpg",
+            "width": 583
+          },
+          {
+            "height": 5824,
+            "info": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0908/info.json",
+            "language": [
+              "English"
+            ],
+            "mimetype": "application/json",
+            "reel_number": "00296028770",
+            "section_label": null,
+            "size": 3396903,
+            "title": "Image 1 of Freeland tribune (Freeland, Pa.), January 2, 1893",
+            "width": 4665
+          },
+          {
+            "fulltext_service": "https://tile.loc.gov/text-services/word-coordinates-service?segment=/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0908.xml&format=alto_xml&full_text=1",
+            "mimetype": "text/plain",
+            "use": "text",
+            "word_coordinates": "https://tile.loc.gov/text-services/word-coordinates-service?segment=/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0908.xml&format=alto_xml"
+          }
+        ],
+        [
+          {
+            "height": 5824,
+            "info": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0909/info.json",
+            "mimetype": "image/jp2",
+            "size": 3394084,
+            "url": "https://tile.loc.gov/storage-services/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0909.jp2",
+            "use": "",
+            "width": 4665
+          },
+          {
+            "mimetype": "application/pdf",
+            "url": "https://tile.loc.gov/storage-services/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0909.pdf",
+            "use": ""
+          },
+          {
+            "mimetype": "text/xml",
+            "url": "https://tile.loc.gov/storage-services/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0909.xml",
+            "use": ""
+          },
+          {
+            "height": 364,
+            "levels": 1,
+            "mimetype": "image/jpeg",
+            "url": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0909/full/pct:6.25/0/default.jpg",
+            "width": 291
+          },
+          {
+            "height": 728,
+            "levels": 1,
+            "mimetype": "image/jpeg",
+            "url": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0909/full/pct:12.5/0/default.jpg",
+            "width": 583
+          },
+          {
+            "height": 5824,
+            "info": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0909/info.json",
+            "language": [
+              "English"
+            ],
+            "mimetype": "application/json",
+            "reel_number": "00296028770",
+            "section_label": null,
+            "size": 3394084,
+            "title": "Image 2 of Freeland tribune (Freeland, Pa.), January 2, 1893",
+            "width": 4665
+          },
+          {
+            "fulltext_service": "https://tile.loc.gov/text-services/word-coordinates-service?segment=/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0909.xml&format=alto_xml&full_text=1",
+            "mimetype": "text/plain",
+            "use": "text",
+            "word_coordinates": "https://tile.loc.gov/text-services/word-coordinates-service?segment=/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0909.xml&format=alto_xml"
+          }
+        ],
+        [
+          {
+            "height": 5824,
+            "info": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0910/info.json",
+            "mimetype": "image/jp2",
+            "size": 3395959,
+            "url": "https://tile.loc.gov/storage-services/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0910.jp2",
+            "use": "",
+            "width": 4665
+          },
+          {
+            "mimetype": "application/pdf",
+            "url": "https://tile.loc.gov/storage-services/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0910.pdf",
+            "use": ""
+          },
+          {
+            "mimetype": "text/xml",
+            "url": "https://tile.loc.gov/storage-services/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0910.xml",
+            "use": ""
+          },
+          {
+            "height": 364,
+            "levels": 1,
+            "mimetype": "image/jpeg",
+            "url": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0910/full/pct:6.25/0/default.jpg",
+            "width": 291
+          },
+          {
+            "height": 728,
+            "levels": 1,
+            "mimetype": "image/jpeg",
+            "url": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0910/full/pct:12.5/0/default.jpg",
+            "width": 583
+          },
+          {
+            "height": 5824,
+            "info": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0910/info.json",
+            "language": [
+              "English"
+            ],
+            "mimetype": "application/json",
+            "reel_number": "00296028770",
+            "section_label": null,
+            "size": 3395959,
+            "title": "Image 3 of Freeland tribune (Freeland, Pa.), January 2, 1893",
+            "width": 4665
+          },
+          {
+            "fulltext_service": "https://tile.loc.gov/text-services/word-coordinates-service?segment=/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0910.xml&format=alto_xml&full_text=1",
+            "mimetype": "text/plain",
+            "use": "text",
+            "word_coordinates": "https://tile.loc.gov/text-services/word-coordinates-service?segment=/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0910.xml&format=alto_xml"
+          }
+        ],
+        [
+          {
+            "height": 5857,
+            "info": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0911/info.json",
+            "mimetype": "image/jp2",
+            "size": 3398922,
+            "url": "https://tile.loc.gov/storage-services/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0911.jp2",
+            "use": "",
+            "width": 4652
+          },
+          {
+            "mimetype": "application/pdf",
+            "url": "https://tile.loc.gov/storage-services/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0911.pdf",
+            "use": ""
+          },
+          {
+            "mimetype": "text/xml",
+            "url": "https://tile.loc.gov/storage-services/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0911.xml",
+            "use": ""
+          },
+          {
+            "height": 366,
+            "levels": 1,
+            "mimetype": "image/jpeg",
+            "url": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0911/full/pct:6.25/0/default.jpg",
+            "width": 290
+          },
+          {
+            "height": 732,
+            "levels": 1,
+            "mimetype": "image/jpeg",
+            "url": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0911/full/pct:12.5/0/default.jpg",
+            "width": 581
+          },
+          {
+            "height": 5857,
+            "info": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0911/info.json",
+            "language": [
+              "English"
+            ],
+            "mimetype": "application/json",
+            "reel_number": "00296028770",
+            "section_label": null,
+            "size": 3398922,
+            "title": "Image 4 of Freeland tribune (Freeland, Pa.), January 2, 1893",
+            "width": 4652
+          },
+          {
+            "fulltext_service": "https://tile.loc.gov/text-services/word-coordinates-service?segment=/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0911.xml&format=alto_xml&full_text=1",
+            "mimetype": "text/plain",
+            "use": "text",
+            "word_coordinates": "https://tile.loc.gov/text-services/word-coordinates-service?segment=/service/ndnp/pst/batch_pst_lydia_ver01/data/sn87080287/00296028770/1893010201/0911.xml&format=alto_xml"
+          }
+        ]
+      ],
+      "image": "https://tile.loc.gov/image-services/iiif/service:ndnp:pst:batch_pst_lydia_ver01:data:sn87080287:00296028770:1893010201:0908/full/pct:6.25/0/default.jpg",
+      "url": "https://www.loc.gov/resource/sn87080287/1893-01-02/ed-1/",
+      "word_coordinates": "https://tile.loc.gov/text-services/word-coordinates-service"
+    }
+  ],
+  "timestamp": 1771405527695,
+  "title_url": "https://www.loc.gov/item/sn87080287"
+}

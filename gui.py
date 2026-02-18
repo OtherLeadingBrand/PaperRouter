@@ -25,7 +25,12 @@ except ImportError:
 
 SCRIPT_DIR = Path(__file__).parent
 DOWNLOADER_SCRIPT = SCRIPT_DIR / "downloader.py"
+HARNESS_SCRIPT = SCRIPT_DIR / "harness.py"
 LCCN_PATTERN = re.compile(r'^[a-z]{1,3}\d{8,10}$')
+
+def _needs_harness(ocr_mode: str) -> bool:
+    """Return True when the OCR mode includes Surya (memory-intensive AI)."""
+    return ocr_mode in ('surya', 'both')
 
 
 class DownloaderGUI:
@@ -96,27 +101,39 @@ class DownloaderGUI:
             foreground="gray",
         ).grid(row=0, column=3, padx=5, sticky=tk.W)
 
+        # Source
+        ttk.Label(newspaper_frame, text="Source:").grid(
+            row=1, column=0, sticky=tk.W, pady=5
+        )
+        self.source_var = tk.StringVar(value="loc")
+        source_combo = ttk.Combobox(
+            newspaper_frame, textvariable=self.source_var,
+            values=["loc"], state="readonly", width=10
+        )
+        source_combo.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
+        ttk.Label(newspaper_frame, text="Library of Congress", font=("Arial", 8, "italic")).grid(row=1, column=2, sticky=tk.W)
+
         # Search
         ttk.Label(newspaper_frame, text="Search:").grid(
-            row=1, column=0, sticky=tk.W, pady=5
+            row=2, column=0, sticky=tk.W, pady=5
         )
         self.search_var = tk.StringVar()
         search_entry = ttk.Entry(
             newspaper_frame, textvariable=self.search_var, width=35
         )
-        search_entry.grid(row=1, column=1, columnspan=2, padx=5, pady=5, sticky=tk.W)
+        search_entry.grid(row=2, column=1, columnspan=2, padx=5, pady=5, sticky=tk.W)
         search_entry.bind("<Return>", lambda e: self._search_newspapers())
 
         ttk.Button(
             newspaper_frame, text="Search", command=self._search_newspapers
-        ).grid(row=1, column=3, padx=5, pady=5, sticky=tk.W)
+        ).grid(row=2, column=3, padx=5, pady=5, sticky=tk.W)
 
         # Search results list
         self.results_list = tk.Listbox(
             newspaper_frame, height=4, font=("Courier New", 9)
         )
         self.results_list.grid(
-            row=2, column=0, columnspan=4, sticky=tk.EW, padx=5, pady=5
+            row=3, column=0, columnspan=4, sticky=tk.EW, padx=5, pady=5
         )
         self.results_list.bind("<<ListboxSelect>>", self._on_result_select)
         newspaper_frame.columnconfigure(1, weight=1)
@@ -191,6 +208,25 @@ class DownloaderGUI:
             cb_frame, text="Retry failed", variable=self.retry_var
         ).pack(side=tk.LEFT)
 
+        # OCR row
+        ocr_row = ttk.Frame(options_frame)
+        ocr_row.grid(row=3, column=0, columnspan=3, sticky=tk.W, pady=2)
+
+        ttk.Label(ocr_row, text="OCR:").pack(side=tk.LEFT)
+        self.ocr_var = tk.StringVar(value="none")
+        ttk.Radiobutton(
+            ocr_row, text="None", variable=self.ocr_var, value="none"
+        ).pack(side=tk.LEFT, padx=(5, 10))
+        ttk.Radiobutton(
+            ocr_row, text="LOC (Fast)", variable=self.ocr_var, value="loc"
+        ).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Radiobutton(
+            ocr_row, text="Surya (AI)", variable=self.ocr_var, value="surya"
+        ).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Radiobutton(
+            ocr_row, text="Both", variable=self.ocr_var, value="both"
+        ).pack(side=tk.LEFT)
+
         # ---- Buttons ----
         btn_frame = ttk.Frame(self.root, padding="5 10")
         btn_frame.pack(fill=tk.X)
@@ -208,6 +244,11 @@ class DownloaderGUI:
         ttk.Button(
             btn_frame, text="Clear Log", command=self._clear_output
         ).pack(side=tk.LEFT, padx=5)
+
+        self.ocr_batch_btn = ttk.Button(
+            btn_frame, text="OCR Batch", command=self._run_ocr_batch
+        )
+        self.ocr_batch_btn.pack(side=tk.RIGHT, padx=5)
 
         # ---- Progress bar ----
         prog_frame = ttk.Frame(self.root, padding="0 2 10 2")
@@ -313,6 +354,7 @@ class DownloaderGUI:
         try:
             cmd = [
                 sys.executable, str(DOWNLOADER_SCRIPT),
+                "--source", self.source_var.get(),
                 "--search", query, "--json",
             ]
             creation_flags = subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
@@ -374,6 +416,7 @@ class DownloaderGUI:
         try:
             cmd = [
                 sys.executable, str(DOWNLOADER_SCRIPT),
+                "--source", self.source_var.get(),
                 "--info", lccn, "--json",
             ]
             creation_flags = subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
@@ -412,10 +455,56 @@ class DownloaderGUI:
     # ------------------------------------------------------------------
 
     def _update_year_state(self):
-        if self.year_mode.get() == "custom":
-            self.years_entry.config(state="normal")
-        else:
+        if self.year_mode.get() == "all":
             self.years_entry.config(state="disabled")
+        else:
+            self.years_entry.config(state="normal")
+
+    def _run_ocr_batch(self):
+        if self.is_downloading:
+            messagebox.showwarning("Busy", "Cannot run OCR batch while downloading!")
+            return
+
+        lccn = self.lccn_var.get().strip()
+        if not lccn:
+            messagebox.showerror("Error", "Please enter an LCCN to process.")
+            return
+
+        output_dir = self.output_var.get().strip() or "downloads"
+        ocr_mode = self.ocr_var.get()
+        if ocr_mode == "none":
+            ocr_mode = "loc"
+
+        use_harness = _needs_harness(ocr_mode)
+        launcher = str(HARNESS_SCRIPT) if use_harness else str(DOWNLOADER_SCRIPT)
+        cmd = [
+            sys.executable, launcher,
+            "--lccn", lccn,
+            "--output", output_dir,
+            "--ocr", ocr_mode,
+            "--ocr-batch"
+        ]
+        self._using_harness = use_harness
+        
+        if self.verbose_var.get():
+            cmd.append("--verbose")
+
+        self._total_issues = 0 # Metadata scan will determine this
+        self._current_issue = 0
+        self.progress_var.set(0)
+        self.progress_label_var.set("Starting OCR Batch...")
+
+        # Disable UI
+        self._set_ui_state("downloading")
+        
+        # Start worker thread
+        thread = threading.Thread(target=self._run_download, args=(cmd,))
+        thread.daemon = True
+        thread.start()
+        self.is_downloading = True
+        self.stop_btn.config(state="normal")
+        self.start_btn.config(state="disabled")
+        self.ocr_batch_btn.config(state="disabled")
 
     def _browse_output(self):
         directory = filedialog.askdirectory(
@@ -457,12 +546,25 @@ class DownloaderGUI:
             )
             return
 
-        cmd = [
-            sys.executable, str(DOWNLOADER_SCRIPT),
-            "--lccn", lccn,
-            "--output", output_dir,
-            "--speed", self.speed_var.get(),
-        ]
+        ocr_mode = self.ocr_var.get()
+        use_harness = _needs_harness(ocr_mode)
+
+        if use_harness:
+            # Route through harness for memory protection when Surya is active
+            cmd = [
+                sys.executable, str(HARNESS_SCRIPT),
+                "--lccn", lccn,
+                "--output", output_dir,
+                "--speed", self.speed_var.get(),
+            ]
+        else:
+            cmd = [
+                sys.executable, str(DOWNLOADER_SCRIPT),
+                "--source", self.source_var.get(),
+                "--lccn", lccn,
+                "--output", output_dir,
+                "--speed", self.speed_var.get(),
+            ]
 
         if self.year_mode.get() == "custom":
             years = self.years_var.get().strip()
@@ -474,6 +576,9 @@ class DownloaderGUI:
         if self.retry_var.get():
             cmd.append("--retry-failed")
 
+        if ocr_mode != "none":
+            cmd.extend(["--ocr", ocr_mode])
+
         # Reset progress
         self._total_issues = 0
         self._current_issue = 0
@@ -481,11 +586,15 @@ class DownloaderGUI:
         self.progress_label_var.set("")
 
         self.is_downloading = True
+        self._using_harness = use_harness
         self.start_btn.config(state="disabled")
         self.stop_btn.config(state="normal")
-        self.status_var.set("Downloading...")
+        status_msg = "Downloading (with memory protection)..." if use_harness else "Downloading..."
+        self.status_var.set(status_msg)
 
         self.output_queue.put(('output', f"LCCN: {lccn}\n"))
+        if use_harness:
+            self.output_queue.put(('output', "[Memory protection active — Surya AI OCR monitored]\n"))
         self.output_queue.put(('output', f"Command: {' '.join(cmd)}\n"))
         self.output_queue.put(('output', "=" * 70 + "\n\n"))
 
@@ -539,7 +648,14 @@ class DownloaderGUI:
                 "Confirm Stop",
                 "Stop the download?\n\nProgress is saved; you can resume later.",
             ):
-                self.download_process.terminate()
+                if getattr(self, '_using_harness', False) and HARNESS_SCRIPT.exists():
+                    # Use harness --kill to cleanly terminate the full process tree
+                    subprocess.Popen(
+                        [sys.executable, str(HARNESS_SCRIPT), "--kill"],
+                        creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0,
+                    )
+                else:
+                    self.download_process.terminate()
                 self.output_queue.put(('output', "\n\nStopped by user.\n"))
                 self.output_queue.put(('status', "Stopped"))
 
