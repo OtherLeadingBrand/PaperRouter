@@ -1,0 +1,4 @@
+# LOC Newspaper Downloader - Python Dependencies
+# Install with: pip install -r requirements.txt
+
+requests>=2.31.0

@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+
+# Downloads/Temp
+downloads/
+test_download*/
+*.tmp
+*.bak
+*.log
+failing_issue.json
+inspect_segments*.py
+check_item_json.py
+test_years.py
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo

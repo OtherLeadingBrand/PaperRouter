@@ -1,0 +1,107 @@
+================================================================================
+         LOC NEWSPAPER DOWNLOADER - QUICK START GUIDE
+         Library of Congress  -  Chronicling America
+================================================================================
+
+For Complete Beginners - Step by Step Instructions
+---------------------------------------------------
+
+STEP 1: Install Python
+-----------------------
+1. Go to https://www.python.org/downloads/
+2. Click "Download Python" (latest version)
+3. Run the installer
+4. IMPORTANT: Check the box "Add Python to PATH"
+5. Click "Install Now"
+6. Wait for installation to complete
+7. Restart your computer
+
+
+STEP 2: Find Your Newspaper
+----------------------------
+Every newspaper has an LCCN identifier (Library of Congress Control Number).
+
+   Search by name:
+     python downloader.py --search "Freeland Tribune"
+
+   Browse online:
+     https://chroniclingamerica.loc.gov/
+
+Common examples:
+   sn87080287   Freeland Tribune (Freeland, PA) 1888-1921
+   sn83045462   Evening Star (Washington, DC) 1854-1972
+   sn83030214   New-York Tribune (New York, NY) 1866-1924
+
+
+STEP 3: Run the Downloader
+---------------------------
+
+OPTION A - Graphical Interface (Easiest):
+   1. Double-click "run_gui.bat"
+   2. Enter the LCCN (or search by name in the search box)
+   3. Choose your download options
+   4. Click "Start Download"
+   5. Wait for completion
+
+OPTION B - Command Line:
+   1. Open Command Prompt in this folder
+      (Click the address bar at top of folder, type "cmd", press Enter)
+   2. Type one of these commands:
+
+      Download all issues of a newspaper:
+        python downloader.py --lccn sn87080287
+
+      Download specific years only:
+        python downloader.py --lccn sn87080287 --years 1900-1905
+
+      Download several year ranges:
+        python downloader.py --lccn sn87080287 --years 1900-1905,1910,1915-1920
+
+
+STEP 4: Find Your Downloaded Files
+-----------------------------------
+1. Look in the "downloads/<lccn>" folder
+2. Files are organized by year
+3. Each file is a PDF of one newspaper page
+
+
+TIPS:
+-----
+- Downloads take time! The script waits 15 seconds between files to be polite
+  to the Library of Congress servers. This is normal and necessary.
+
+- You can stop anytime! Close the window or press Ctrl+C. Run the command
+  again to resume where you left off.
+
+- Already downloaded files are skipped automatically.
+
+- If some files fail, re-run with:
+    python downloader.py --lccn <YOUR_LCCN> --retry-failed
+
+- Check "download.log" in the output folder if something goes wrong.
+
+
+TROUBLESHOOTING:
+----------------
+Problem: "Python is not recognized"
+Solution: Reinstall Python and check "Add Python to PATH".
+
+Problem: "No module named 'requests'"
+Solution: Open Command Prompt and type: pip install requests
+
+Problem: "No issues found"
+Solution: Verify the LCCN at https://chroniclingamerica.loc.gov/
+         Not all newspapers have been digitized.
+
+Problem: Download is very slow
+Solution: This is normal! The delay prevents you from being rate-limited.
+
+Problem: Script stopped/crashed
+Solution: Just run it again. It resumes automatically.
+
+
+NEED MORE HELP?
+---------------
+Read the full README.md file for detailed documentation.
+
+================================================================================
