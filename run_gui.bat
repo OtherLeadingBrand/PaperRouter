@@ -1,5 +1,5 @@
 @echo off
-REM LOC Newspaper Downloader - Web GUI Launcher
+REM PaperRouter - Web GUI Launcher
 REM Double-click this file to open the web interface in your browser.
 
 REM Check if Python is installed

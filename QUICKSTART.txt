@@ -1,6 +1,6 @@
 ================================================================================
-         NEWSPAPER DOWNLOADER - QUICK START GUIDE
-         Download historical newspapers from the Library of Congress
+         PAPERROUTER - QUICK START GUIDE
+         A robust multi-source newspaper downloader and OCR suite
 ================================================================================
 
 WHAT IS THIS?
@@ -42,8 +42,8 @@ with the command line.
 
 STEP 1: Open the app
   - Double-click "run_gui.bat" in this folder
-  - A window will open with the title "LOC Newspaper Downloader"
-  - (First time: it may take a moment to install a dependency)
+  - Your web browser will open to http://localhost:5000 with the PaperRouter interface.
+  - (First time: it may take a moment to install dependencies like Flask)
 
 STEP 2: Find your newspaper
   - Every newspaper has a unique ID called an "LCCN"
@@ -227,9 +227,10 @@ Problem: "No issues found"
 Fix:     Double-check the LCCN at https://chroniclingamerica.loc.gov/
          Not all newspapers have been digitized. Try searching by name.
 
-Problem: The GUI window doesn't open / closes immediately
-Fix:     Try running "python gui.py" from Command Prompt to see the error.
-         Most likely a missing dependency (requests or tkinter).
+Problem: The interface doesn't open in the browser
+Fix:     1. Ensure no other app is using port 5000.
+         2. Try running "python web_gui.py" from Command Prompt to see errors.
+         3. Ensure Flask is installed: pip install flask
 
 Problem: "Failed to import Surya" when using AI OCR
 Fix:     Install the extra dependencies:

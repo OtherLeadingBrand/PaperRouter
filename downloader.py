@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-LOC Newspaper Downloader
-Downloads historical newspaper editions from the Library of Congress
-Chronicling America collection.
+PaperRouter
+A robust, extensible tool to download and OCR historical newspaper
+editions from various archives.
 
 Supports any newspaper available in the collection by LCCN identifier.
 
@@ -83,7 +83,7 @@ def create_session() -> requests.Session:
     session.mount("http://", adapter)
     session.mount("https://", adapter)
     session.headers.update({
-        'User-Agent': 'LOCNewspaperDownloader/2.0 (educational research)'
+        'User-Agent': 'PaperRouter/2.0 (educational research)'
     })
     return session
 
@@ -208,7 +208,7 @@ class DownloadManager:
     def run(self):
         """Execute the download process."""
         self.logger.info("=" * 70)
-        self.logger.info(f"Newspaper Downloader (Source: {self.source.display_name})")
+        self.logger.info(f"PaperRouter (Source: {self.source.display_name})")
         self.logger.info(f"Newspaper: {self.newspaper_title} (LCCN: {self.lccn})")
         self.logger.info(f"Output: {self.output_dir.absolute()}")
         self.logger.info("-" * 40)
@@ -356,7 +356,7 @@ def parse_year_range(year_str: str) -> List[int]:
 
 # ---------------------------------------------------------------------------
 def main():
-    parser = argparse.ArgumentParser(description="Multi-Source Newspaper Downloader")
+    parser = argparse.ArgumentParser(description="PaperRouter: Multi-Source Newspaper Downloader")
     parser.add_argument("--lccn", help="Newspaper LCCN (e.g. sn87080287)")
     parser.add_argument("--source", default="loc", help="Archive source (default: loc)")
     parser.add_argument("--years", help="Years to download (e.g. 1893,1895-1900)")

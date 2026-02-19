@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-LOC Newspaper Downloader - Web Interface
+PaperRouter - Web Interface
 A Flask-based GUI served in the browser.
 Run:  python web_gui.py
 Then open http://localhost:5000 in your browser.
@@ -335,7 +335,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LOC Newspaper Downloader</title>
+<title>PaperRouter</title>
 <style>
   :root {
     --bg: #f7f7f8;
@@ -445,8 +445,8 @@ HTML_PAGE = r"""<!DOCTYPE html>
 </head>
 <body>
 
-<h1>LOC Newspaper Downloader</h1>
-<p class="subtitle">Download historical newspapers from the Library of Congress</p>
+<h1>PaperRouter</h1>
+<p class="subtitle">A robust multi-source newspaper downloader and OCR suite</p>
 
 <!-- Newspaper Selection -->
 <div class="card">

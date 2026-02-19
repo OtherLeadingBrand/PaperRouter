@@ -1,4 +1,4 @@
-# Multi-Source Newspaper Downloader
+# PaperRouter
 
 A robust, extensible Python tool to download and OCR historical newspaper editions from major archives, starting with the **Library of Congress [Chronicling America](https://chroniclingamerica.loc.gov/)**.
 
@@ -28,7 +28,7 @@ pip install -r requirements.txt
 pip install -r requirements.txt surya-ocr pymupdf torch
 ```
 
-> On Windows you can skip manual setup entirely -- `run.bat` and `run_gui.bat` check for dependencies and install them automatically on first launch.
+> On Windows you can skip manual setup entirely -- `run_gui.bat` checks for dependencies and launches the browser-based interface automatically.
 
 ### 2. Search for a Newspaper
 
@@ -94,17 +94,17 @@ python downloader.py --lccn sn87080287 --ocr both
 python downloader.py --lccn sn87080287 --ocr loc --ocr-batch
 ```
 
-## GUI Mode
+## Web Interface
 
-Launch the graphical interface:
+Launch the graphical interface in your browser:
 
 ```bash
-python gui.py
+python web_gui.py
 ```
 
 Or double-click `run_gui.bat` on Windows.
 
-The GUI provides the same features as the CLI: search, lookup, download, and OCR batch -- with a progress bar and live log output. When Surya OCR is selected, the GUI automatically routes the work through the memory-protection harness.
+The interface provides the same features as the CLI: search, lookup, download, and OCR batch -- with a progress bar and live log output directly in your browser. When Surya OCR is selected, the backend automatically routes the work through the memory-protection harness.
 
 ## CLI Reference
 
@@ -191,7 +191,7 @@ The GUI uses the harness automatically whenever Surya OCR is active.
 | File | Description |
 |---|---|
 | `run.bat` | CLI launcher. Checks for Python and dependencies, then passes arguments to `downloader.py`. Run with no arguments for help. |
-| `run_gui.bat` | GUI launcher. Double-click to open the graphical interface. Uses `pythonw` when available to hide the console window. |
+| `run_gui.bat` | Web GUI launcher. Double-click to open the interface in your browser. |
 
 Both scripts auto-install the `requests` library if it's missing.
 

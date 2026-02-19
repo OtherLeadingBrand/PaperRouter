@@ -1,6 +1,6 @@
 # Developer Guide
 
-This guide describes the architecture of the Multi-Source Newspaper Downloader and explains how to extend it with new sources or OCR engines.
+This guide describes the architecture of **PaperRouter** and explains how to extend it with new sources or OCR engines.
 
 ## Architecture Overview
 
@@ -11,11 +11,12 @@ The system is built around a **Pluggable Source Architecture**. This decouples t
 ```text
 /
 ├── downloader.py          # CLI entry point and DownloadManager orchestration
+├── web_gui.py             # Flask-based web interface (primary GUI)
+├── gui.py                 # Legacy Tkinter-based interface (deprecated)
 ├── ocr_engine.py          # Tier 1 & 2 OCR management (SuryaOCREngine, OCRManager)
 ├── harness.py             # Resource-monitored process wrapper for AI workers
-├── gui.py                 # Tkinter-based graphical interface
-├── run.bat                # Windows CLI launcher (auto-installs deps)
-├── run_gui.bat            # Windows GUI launcher
+├── run.bat                # Windows CLI launcher
+├── run_gui.bat            # Windows Web GUI launcher (auto-installs deps)
 ├── requirements.txt       # Python dependencies
 ├── sources/
 │   ├── __init__.py        # Source registry & get_source() factory
@@ -30,7 +31,7 @@ The system is built around a **Pluggable Source Architecture**. This decouples t
 ### Component Relationships
 
 ```
-CLI (downloader.py)          GUI (gui.py)
+CLI (downloader.py)          Web GUI (web_gui.py)
         │                        │
         ▼                        ▼ (subprocess)
    DownloadManager ─────► harness.py (when Surya active)
@@ -46,7 +47,7 @@ CLI (downloader.py)          GUI (gui.py)
                └── SuryaOCREngine            [Tier 2]
 ```
 
-The GUI does not import `DownloadManager` directly. It spawns `downloader.py` (or `harness.py`) as a subprocess and parses its stdout to update the progress bar.
+The Web GUI does not import `DownloadManager` directly. It spawns `downloader.py` (or `harness.py`) as a subprocess and parses its stdout to stream progress events to the browser.
 
 ---
 
@@ -162,7 +163,7 @@ SOURCES = {
 }
 ```
 
-That's it. The CLI `--source mysource` and the GUI source dropdown will pick it up automatically.
+That's it. The CLI `--source mysource` and the Web GUI source dropdown will pick it up automatically.
 
 ### 3. Implementation Notes
 
@@ -201,12 +202,13 @@ Models are lazy-loaded on first use. The `FoundationPredictor` is shared between
 Because Surya loads large ML models into memory, Tier 2 OCR can easily consume many gigabytes of RAM. The `harness.py` wrapper provides safety:
 
 - Spawns `downloader.py` as a child process in its own process group
-- Polls the process tree every 10 seconds for memory and CPU usage
-- Kills the entire tree if RSS exceeds **75% of available RAM** (or `HARNESS_MEM_MB`)
-- Kills on timeout after **120 minutes** (or `HARNESS_TIMEOUT`)
-- Writes a PID file (`.harness.pid`) for external kill support (`python harness.py --kill`)
+-   Spawns `downloader.py` as a child process in its own process group
+-   Polls the process tree every 10 seconds for memory and CPU usage
+-   Kills the entire tree if RSS exceeds **75% of available RAM** (or `HARNESS_MEM_MB`)
+-   Kills on timeout after **120 minutes** (or `HARNESS_TIMEOUT`)
+-   Writes a PID file (`.harness.pid`) for external kill support (`python harness.py --kill`)
 
-The GUI routes through the harness automatically when Surya is active.
+The Web GUI routes through the harness automatically when Surya is active.
 
 ---
 
