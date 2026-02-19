@@ -31,6 +31,8 @@ DOWNLOADER_SCRIPT = SCRIPT_DIR / "downloader.py"
 HARNESS_SCRIPT = SCRIPT_DIR / "harness.py"
 LCCN_PATTERN = re.compile(r'^[a-z]{1,3}\d{8,10}$')
 PROGRESS_RE = re.compile(r'\[(\d+)/(\d+)\]\s+Processing')
+FOUND_ISSUES_RE = re.compile(r'Found\s+(\d+)\s+issues')
+EMPTY_WARNING_RE = re.compile(r'No issues found matching criteria')
 
 PORT = 5000
 
@@ -146,6 +148,15 @@ class DownloadManager:
         m = PROGRESS_RE.search(line)
         if m:
             self.progress = {"current": int(m.group(1)), "total": int(m.group(2))}
+        else:
+            m = FOUND_ISSUES_RE.search(line)
+            if m:
+                self.progress = {"current": 0, "total": int(m.group(1))}
+            elif EMPTY_WARNING_RE.search(line):
+                self.progress = {"current": 0, "total": 0}
+                m = True
+        
+        if m:
             event = "event: progress\ndata: " + json.dumps(self.progress) + "\n\n"
             self._broadcast(event)
 
@@ -648,9 +659,15 @@ function connectSSE() {
     const data = JSON.parse(e.data);
     setRunning(false);
     if (data.status === 'success') {
-      $('progress-fill').style.width = '100%';
-      $('progress-text').textContent = 'Complete';
-      $('status-bar').textContent = 'Download complete';
+      if (data.progress.total === 0) {
+        $('progress-fill').style.width = '0%';
+        $('progress-text').textContent = 'No matching issues found';
+        $('status-bar').textContent = 'Discovery complete - 0 issues found';
+      } else {
+        $('progress-fill').style.width = '100%';
+        $('progress-text').textContent = 'Complete';
+        $('status-bar').textContent = 'Download complete';
+      }
     } else if (data.status === 'stopped') {
       $('progress-text').textContent = 'Stopped';
       $('status-bar').textContent = 'Stopped';
@@ -710,25 +727,27 @@ async function startOCRBatch() {
 async function searchNewspapers() {
   const query = val('search-input');
   if (!query) return;
-  $('search-results').style.display = 'block';
-  $('search-results').innerHTML = '<div class="result-item" style="color:var(--muted)">Searching...</div>';
+  const resultsDiv = $('search-results');
+  resultsDiv.innerHTML = '<div style="padding:10px;color:var(--muted)">Searching...</div>';
+  resultsDiv.style.display = 'block';
+
   try {
     const resp = await fetch('/api/search', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({query, source: val('source')}),
     });
     const results = await resp.json();
-    if (!results.length) {
-      $('search-results').innerHTML = '<div class="result-item" style="color:var(--muted)">No newspapers found.</div>';
-      return;
+    if (results.length > 0) {
+      resultsDiv.innerHTML = results.map(r => 
+        `<div class="result-item" onclick="selectResult('${r.lccn}')">
+          ${r.lccn} &mdash; ${r.title} (${r.place || '?'}) ${r.dates || ''}
+         </div>`
+      ).join('');
+    } else {
+      resultsDiv.innerHTML = '<div style="padding:10px;color:var(--muted)">No results found.</div>';
     }
-    $('search-results').innerHTML = results.map(r =>
-      `<div class="result-item" onclick="selectResult('${r.lccn}')">` +
-      `<strong>${r.lccn}</strong> &mdash; ${r.title || 'Unknown'} (${r.place || ''}, ${r.dates || ''})` +
-      `</div>`
-    ).join('');
   } catch (e) {
-    $('search-results').innerHTML = '<div class="result-item" style="color:var(--danger)">Search failed.</div>';
+    resultsDiv.innerHTML = '<div style="padding:10px;color:var(--danger)">Search failed.</div>';
   }
 }
 
@@ -741,7 +760,13 @@ function selectResult(lccn) {
 async function lookupLCCN() {
   const lccn = val('lccn');
   if (!lccn) return;
-  $('info-display').textContent = 'Looking up...';
+  
+  $('info-display').textContent = 'Looking up newspaper details...';
+  const btn = document.querySelectorAll('.btn-secondary')[0];
+  const oldText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '...';
+
   try {
     const resp = await fetch('/api/lookup', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -759,7 +784,7 @@ async function lookupLCCN() {
       
       // Suggest output folder name
       const safeTitle = info.title.replace(/[<>:"/\\|?*]/g, '').trim();
-      if (safeTitle && $('output').value === 'downloads') {
+      if (safeTitle && ($('output').value === 'downloads' || $('output').value.startsWith('downloads/'))) {
           $('output').value = `downloads/${safeTitle}`;
       }
     } else {
@@ -768,6 +793,9 @@ async function lookupLCCN() {
     }
   } catch (e) {
     $('info-display').textContent = 'Lookup failed.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = oldText;
   }
 }
 
