@@ -3,7 +3,8 @@
     "allow": [
       "WebFetch(domain:www.loc.gov)",
       "Bash(python downloader.py:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(curl:*)"
     ]
   }
 }

@@ -1,6 +1,6 @@
 @echo off
-REM LOC Newspaper Downloader - GUI Launcher
-REM Double-click this file to open the graphical interface.
+REM LOC Newspaper Downloader - Web GUI Launcher
+REM Double-click this file to open the web interface in your browser.
 
 REM Check if Python is installed
 python --version >nul 2>&1
@@ -21,11 +21,13 @@ if errorlevel 1 (
     python -m pip install requests
     echo.
 )
-
-REM Launch the GUI
-where pythonw >nul 2>&1
+python -c "import flask" >nul 2>&1
 if errorlevel 1 (
-    python "%~dp0gui.py"
-) else (
-    start "" pythonw "%~dp0gui.py"
+    echo Installing Flask...
+    python -m pip install flask
+    echo.
 )
+
+REM Launch the web GUI (opens browser automatically)
+python "%~dp0web_gui.py"
+pause

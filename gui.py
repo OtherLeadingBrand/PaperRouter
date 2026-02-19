@@ -43,6 +43,7 @@ class DownloaderGUI:
         self.root.title("LOC Newspaper Downloader")
         self.root.geometry("780x720")
         self.root.resizable(True, True)
+        self.root.protocol("WM_DELETE_WINDOW", self._on_close)
 
         self.download_process = None
         self.is_downloading = False
@@ -300,7 +301,11 @@ class DownloaderGUI:
                     self.is_downloading = False
                     self.start_btn.config(state="normal")
                     self.stop_btn.config(state="disabled")
+                    self.ocr_batch_btn.config(state="normal")
                     self.download_process = None
+                    # Ensure progress bar is in determinate mode
+                    self.progress_bar.stop()
+                    self.progress_bar.config(mode='determinate')
                     if msg_data == 'success':
                         self.progress_var.set(100)
                         self.progress_label_var.set("Complete")
@@ -326,6 +331,10 @@ class DownloaderGUI:
         if m:
             current = int(m.group(1))
             total = int(m.group(2))
+            # Switch from indeterminate to determinate on first progress update
+            if self._total_issues == 0:
+                self.progress_bar.stop()
+                self.progress_bar.config(mode='determinate')
             self._current_issue = current
             self._total_issues = total
             pct = (current / total) * 100 if total else 0
@@ -492,6 +501,8 @@ class DownloaderGUI:
         self._total_issues = 0
         self._current_issue = 0
         self.progress_var.set(0)
+        self.progress_bar.config(mode='indeterminate')
+        self.progress_bar.start(15)
         self.progress_label_var.set("Starting OCR Batch...")
 
         self.is_downloading = True
@@ -578,16 +589,19 @@ class DownloaderGUI:
         if ocr_mode != "none":
             cmd.extend(["--ocr", ocr_mode])
 
-        # Reset progress
+        # Reset progress — start with indeterminate bar while connecting
         self._total_issues = 0
         self._current_issue = 0
         self.progress_var.set(0)
-        self.progress_label_var.set("")
+        self.progress_bar.config(mode='indeterminate')
+        self.progress_bar.start(15)
+        self.progress_label_var.set("Connecting...")
 
         self.is_downloading = True
         self._using_harness = use_harness
         self.start_btn.config(state="disabled")
         self.stop_btn.config(state="normal")
+        self.ocr_batch_btn.config(state="disabled")
         status_msg = "Downloading (with memory protection)..." if use_harness else "Downloading..."
         self.status_var.set(status_msg)
 
@@ -603,6 +617,11 @@ class DownloaderGUI:
 
     def _run_download(self, cmd):
         try:
+            # Force unbuffered stdout in the child Python process so output
+            # reaches the GUI in real-time instead of being block-buffered.
+            env = os.environ.copy()
+            env["PYTHONUNBUFFERED"] = "1"
+
             creation_flags = (
                 subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
             )
@@ -612,11 +631,13 @@ class DownloaderGUI:
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
-                universal_newlines=True,
                 creationflags=creation_flags,
+                env=env,
             )
 
-            for line in self.download_process.stdout:
+            # Use readline() instead of iterating the file object to avoid
+            # Python's internal read-ahead buffer delaying output.
+            for line in iter(self.download_process.stdout.readline, ''):
                 self.output_queue.put(('output', line))
 
             self.download_process.wait()
@@ -647,16 +668,49 @@ class DownloaderGUI:
                 "Confirm Stop",
                 "Stop the download?\n\nProgress is saved; you can resume later.",
             ):
-                if getattr(self, '_using_harness', False) and HARNESS_SCRIPT.exists():
-                    # Use harness --kill to cleanly terminate the full process tree
+                self._kill_download_process()
+                self.output_queue.put(('output', "\n\nStopped by user.\n"))
+                self.output_queue.put(('status', "Stopped"))
+                self.is_downloading = False
+                self.download_process = None
+                self.start_btn.config(state="normal")
+                self.stop_btn.config(state="disabled")
+                self.ocr_batch_btn.config(state="normal")
+                self.progress_bar.stop()
+                self.progress_bar.config(mode='determinate')
+                self.progress_label_var.set("Stopped")
+
+    def _kill_download_process(self):
+        """Terminate the running download subprocess and its process tree."""
+        if self.download_process and self.download_process.poll() is None:
+            if getattr(self, '_using_harness', False) and HARNESS_SCRIPT.exists():
+                try:
                     subprocess.Popen(
                         [sys.executable, str(HARNESS_SCRIPT), "--kill"],
                         creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0,
                     )
-                else:
-                    self.download_process.terminate()
-                self.output_queue.put(('output', "\n\nStopped by user.\n"))
-                self.output_queue.put(('status', "Stopped"))
+                except Exception:
+                    pass
+            try:
+                self.download_process.terminate()
+                self.download_process.wait(timeout=3)
+            except Exception:
+                try:
+                    self.download_process.kill()
+                except Exception:
+                    pass
+
+    def _on_close(self):
+        """Handle window close — terminate subprocesses, then exit."""
+        if self.is_downloading:
+            if not messagebox.askyesno(
+                "Quit",
+                "A download is in progress.\n\nQuit anyway? "
+                "(Progress is saved; you can resume later.)",
+            ):
+                return
+            self._kill_download_process()
+        self.root.destroy()
 
 
 # ------------------------------------------------------------------
