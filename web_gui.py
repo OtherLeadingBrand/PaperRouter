@@ -20,6 +20,8 @@ from pathlib import Path
 from queue import Queue, Empty
 
 from flask import Flask, Response, request, jsonify
+import tkinter as tk
+from tkinter import filedialog
 
 # ---------------------------------------------------------------------------
 # Paths & constants
@@ -171,9 +173,19 @@ class DownloadManager:
                 pass
         try:
             if sys.platform == 'win32':
-                # Force kill the process and all its children
+                # Force kill the process and all its children. 
+                # This ensures harness.py and its children (downloader and workers) are gone.
                 subprocess.run(['taskkill', '/F', '/T', '/PID', str(self.process.pid)],
                                creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True)
+                
+                # Double-check for harness.py's specific PID file if it exists
+                if HARNESS_SCRIPT.exists() and (SCRIPT_DIR / ".harness.pid").exists():
+                    try:
+                        h_pid = int((SCRIPT_DIR / ".harness.pid").read_text().strip())
+                        subprocess.run(['taskkill', '/F', '/T', '/PID', str(h_pid)],
+                                       creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True)
+                    except:
+                        pass
             else:
                 self.process.terminate()
                 try:
@@ -321,6 +333,20 @@ def lookup():
         return Response(result.stdout, mimetype="application/json")
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/browse", methods=["POST"])
+def browse():
+    """Open a native directory picker and return the selected path."""
+    import tkinter as tk
+    from tkinter import filedialog
+    root = tk.Tk()
+    root.withdraw()
+    # Bring to front
+    root.attributes('-topmost', True)
+    folder_path = filedialog.askdirectory()
+    root.destroy()
+    return jsonify({"path": folder_path})
 
 
 # ---------------------------------------------------------------------------
@@ -482,9 +508,12 @@ HTML_PAGE = r"""<!DOCTYPE html>
 <div class="card">
   <h2>Download Options</h2>
   <div class="row" style="margin-bottom:10px">
-    <div>
+    <div style="flex: 2">
       <label for="output">Output folder</label>
-      <input type="text" id="output" value="downloads">
+      <div class="row" style="gap:5px">
+        <input type="text" id="output" value="downloads">
+        <button class="btn-secondary narrow" onclick="browseFolder()">Browse</button>
+      </div>
     </div>
     <div>
       <label for="source">Source</label>
@@ -493,7 +522,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
   </div>
   <div class="row" style="margin-bottom:8px">
     <div>
-      <label>Years</label>
+      <label>Years <span id="available-years" style="font-weight:normal;color:var(--primary);margin-left:10px"></span></label>
       <div class="radio-group">
         <label><input type="radio" name="year-mode" value="all" checked onchange="toggleYears()"> All available</label>
         <label><input type="radio" name="year-mode" value="custom" onchange="toggleYears()"> Custom:</label>
@@ -721,12 +750,32 @@ async function lookupLCCN() {
     const info = await resp.json();
     if (info && info.title) {
       $('info-display').innerHTML =
-        `<strong>${info.title}</strong> (${info.lccn}) &mdash; ${info.start_year || '?'}-${info.end_year || '?'}`;
+        `<strong>${info.title}</strong> (${info.lccn})`;
+      if (info.start_year && info.end_year) {
+        $('available-years').textContent = `(Available: ${info.start_year}-${info.end_year})`;
+      } else {
+        $('available-years').textContent = '';
+      }
+      
+      // Suggest output folder name
+      const safeTitle = info.title.replace(/[<>:"/\\|?*]/g, '').trim();
+      if (safeTitle && $('output').value === 'downloads') {
+          $('output').value = `downloads/${safeTitle}`;
+      }
     } else {
       $('info-display').textContent = 'No newspaper found for that LCCN.';
+      $('available-years').textContent = '';
     }
   } catch (e) {
     $('info-display').textContent = 'Lookup failed.';
+  }
+}
+
+async function browseFolder() {
+  const resp = await fetch('/api/browse', {method: 'POST'});
+  const data = await resp.json();
+  if (data.path) {
+    $('output').value = data.path;
   }
 }
 
