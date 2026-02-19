@@ -88,3 +88,7 @@ class NewspaperSource(ABC):
     def search_titles(self, query: str) -> List[TitleResult]:
         """Search for newspapers matching the query."""
         pass
+
+    def build_page_url(self, lccn: str, date: str, edition: int, page_num: int) -> str:
+        """Build a URL for a specific page. Used for OCR batch reconstruction."""
+        return ""

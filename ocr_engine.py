@@ -1,118 +1,22 @@
-import json
 import logging
-import os
-import shutil
-import time
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, Optional
 
-import requests
-from datetime import datetime
 from sources.base import PageMetadata, NewspaperSource
 
 try:
     import fitz  # PyMuPDF
     from PIL import Image
-    from surya.model.detection import model as det_model
-    from surya.model.recognition import model as rec_model
-    from surya.model.layout import model as layout_model
-    from surya.ocr import run_ocr
-    from surya.layout import run_layout
-    from surya.model.recognition.processor import processor as rec_processor
     SURYA_AVAILABLE = True
 except ImportError:
     SURYA_AVAILABLE = False
 
-class OCRBase:
-    """Base class for OCR engines."""
+
+class SuryaOCREngine:
+    """Local AI-powered OCR with layout analysis using Surya."""
+
     def __init__(self, logger: Optional[logging.Logger] = None):
         self.logger = logger or logging.getLogger(__name__)
-
-    def process_page(self, page_data: Dict, output_dir: Path) -> Dict:
-        """Process a single page and return results."""
-        raise NotImplementedError
-
-class LOCTextFetcher(OCRBase):
-    """Fetches pre-existing OCR text from the Library of Congress API."""
-
-    # Single-character lines that are column separator artifacts in ALTO XML
-    _ARTIFACT_CHARS = frozenset('|ijIl')
-
-    def _postprocess_loc_text(self, text: str) -> str:
-        """
-        Clean up the raw full_text from the LOC word-coordinates service.
-
-        The LOC ALTO XML already handles multi-column reading order correctly —
-        text flows column-by-column in the right sequence. What we fix here:
-
-        1. Hyphenated line breaks: 'com-\\nplete' → 'complete'
-           Newspapers hyphenate words at column edges; these should be joined.
-
-        2. Single-character artifact lines: lone '|', 'j', 'i', 'I', 'l'
-           These are column rule characters that bleed into the text stream.
-
-        3. Article boundary spacing: insert a blank line before all-caps
-           headings, but only when the previous content was body text (not
-           another heading line), so multi-line headings stay together.
-        """
-        import re
-
-        def is_heading(s: str) -> bool:
-            """All-caps line of 6+ chars — likely an article title."""
-            s = s.strip()
-            return bool(s) and s == s.upper() and len(s) > 5
-
-        lines = text.split('\n')
-        out: list[str] = []
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-            stripped = line.strip()
-
-            # Skip single-char artifact lines
-            if len(stripped) == 1 and stripped in self._ARTIFACT_CHARS:
-                i += 1
-                continue
-
-            # Join hyphenated line breaks.
-            # Match a line whose last word ends with a hyphen, followed by a
-            # line that starts with a lowercase letter (continuation).
-            hyphen_match = re.search(r'(\w+)-$', stripped)
-            if (hyphen_match
-                    and i + 1 < len(lines)
-                    and lines[i + 1].strip()
-                    and lines[i + 1].strip()[0].islower()):
-                next_stripped = lines[i + 1].strip()
-                # Replace 'word-\nnext_word rest' with 'wordnext_word rest'
-                prefix = stripped[:hyphen_match.start(1)]
-                root = hyphen_match.group(1)
-                merged = prefix + root + next_stripped
-                out.append(merged)
-                i += 2
-                continue
-
-            # Insert blank line before all-caps headings only when the previous
-            # non-empty output line was body text (not another heading).
-            if is_heading(stripped) and out:
-                # Find last non-empty output line
-                last_content = next(
-                    (l for l in reversed(out) if l.strip()), None
-                )
-                if last_content and not is_heading(last_content):
-                    out.append('')
-
-            out.append(line)
-            i += 1
-
-        # Collapse runs of more than 2 blank lines
-        result = re.sub(r'\n{3,}', '\n\n', '\n'.join(out))
-        return result
-
-class SuryaOCREngine(OCRBase):
-    """Local AI-powered OCR with layout analysis using Surya."""
-    
-    def __init__(self, logger: Optional[logging.Logger] = None):
-        super().__init__(logger)
         self.foundation_predictor = None
         self.det_predictor = None
         self.rec_predictor = None

@@ -489,22 +489,20 @@ class DownloaderGUI:
         if self.verbose_var.get():
             cmd.append("--verbose")
 
-        self._total_issues = 0 # Metadata scan will determine this
+        self._total_issues = 0
         self._current_issue = 0
         self.progress_var.set(0)
         self.progress_label_var.set("Starting OCR Batch...")
 
-        # Disable UI
-        self._set_ui_state("downloading")
-        
-        # Start worker thread
-        thread = threading.Thread(target=self._run_download, args=(cmd,))
-        thread.daemon = True
-        thread.start()
         self.is_downloading = True
-        self.stop_btn.config(state="normal")
         self.start_btn.config(state="disabled")
+        self.stop_btn.config(state="normal")
         self.ocr_batch_btn.config(state="disabled")
+        self.status_var.set("Running OCR batch...")
+
+        threading.Thread(
+            target=self._run_download, args=(cmd,), daemon=True
+        ).start()
 
     def _browse_output(self):
         directory = filedialog.askdirectory(
@@ -553,6 +551,7 @@ class DownloaderGUI:
             # Route through harness for memory protection when Surya is active
             cmd = [
                 sys.executable, str(HARNESS_SCRIPT),
+                "--source", self.source_var.get(),
                 "--lccn", lccn,
                 "--output", output_dir,
                 "--speed", self.speed_var.get(),

@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:www.loc.gov)"
+      "WebFetch(domain:www.loc.gov)",
+      "Bash(python downloader.py:*)",
+      "Bash(ls:*)"
     ]
   }
 }

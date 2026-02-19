@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+import time
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Any
 import requests
@@ -133,11 +134,11 @@ class LOCSource(NewspaperSource):
 
     def get_pages_for_issue(self, issue: IssueMetadata) -> List[PageMetadata]:
         self.logger.info(f"Fetching page metadata for issue {issue.date}...")
-        
+
         # Ensure URL ends with fo=json
         sep = '&' if '?' in issue.url else '?'
         api_url = f"{issue.url}{sep}fo=json"
-        
+
         try:
             response = self.session.get(api_url, timeout=30)
             response.raise_for_status()
@@ -147,27 +148,38 @@ class LOCSource(NewspaperSource):
             return []
 
         pages = []
-        # LOC API: inner 'resources' list contains the pages
+        # LOC API structure: resources[0] contains the issue with a 'files' list.
+        # Each entry in 'files' is a page, represented as a list of file variants
+        # (PDF, JP2, XML, etc. for that page).
         resources = data.get('resources', [])
-        for i, res in enumerate(resources):
-            # For each resource, we need to find the PDF and OCR links
-            # Usually one 'resource' per page
-            page_url = res.get('url') or res.get('id')
-            if not page_url:
-                continue
-                
-            # Prefer /resource/ endpoint which has better fulltext metadata
-            if '/item/' in page_url:
-                page_url = page_url.replace('/item/', '/resource/')
+        if not resources:
+            return pages
+
+        resource = resources[0]
+        resource_url = resource.get('url', issue.url).rstrip('/')
+        file_groups = resource.get('files', [])
+
+        for i, file_group in enumerate(file_groups):
+            page_num = i + 1
+            # Build a page-specific URL using ?sp=N
+            page_url = f"{resource_url}?sp={page_num}"
+
+            # Extract the PDF URL from this page's file variants
+            pdf_url = ""
+            for entry in file_group:
+                if entry.get('mimetype') == 'application/pdf':
+                    pdf_url = entry.get('url', '')
+                    break
 
             pages.append(PageMetadata(
                 issue_date=issue.date,
                 edition=issue.edition,
-                page_num=i + 1,
+                page_num=page_num,
                 url=page_url,
+                pdf_url=pdf_url,
                 lccn=issue.lccn
             ))
-            
+
         return pages
 
     def download_page_pdf(self, page: PageMetadata, dest_path: Path) -> DownloadResult:
@@ -326,20 +338,49 @@ class LOCSource(NewspaperSource):
         
         return processed
 
+    def build_page_url(self, lccn: str, date: str, edition: int, page_num: int) -> str:
+        """Build a LOC resource URL for a specific page."""
+        return f"{self.BASE_URL}/resource/{lccn}/{date}/ed-{edition}/?sp={page_num}"
+
     def search_titles(self, query: str) -> List[TitleResult]:
         api_url = f"{self.COLLECTION_API_URL}?q={query}&fo=json&fa=original_format:newspaper"
         try:
             resp = self.session.get(api_url, timeout=30)
             resp.raise_for_status()
             data = resp.json()
-            
+
+            seen_lccns = set()
             results = []
             for item in data.get('results', []):
+                # LOC API uses 'number_lccn' (a list) rather than 'lccn'
+                lccn_list = item.get('number_lccn', [])
+                lccn = lccn_list[0] if lccn_list else ''
+                if not lccn or lccn in seen_lccns:
+                    continue
+                seen_lccns.add(lccn)
+
+                # partof_title has the newspaper name; fall back to item title
+                partof = item.get('partof_title', [])
+                title = partof[0] if partof else item.get('title', '')
+
+                # Location from composite_location or location fields
+                location = ''
+                loc_state = item.get('location_state', [])
+                loc_city = item.get('location_city', [])
+                if loc_city and loc_state:
+                    location = f"{loc_city[0]}, {loc_state[0]}"
+                elif loc_state:
+                    location = loc_state[0]
+
+                dates = item.get('date', '')
+                if isinstance(dates, list):
+                    dates = dates[0] if dates else ''
+
                 results.append(TitleResult(
-                    lccn=item.get('lccn', ''),
-                    title=item.get('title', ''),
-                    place=item.get('place_of_publication', ''),
-                    dates=item.get('date', ''),
+                    lccn=lccn,
+                    title=title,
+                    place=location,
+                    dates=dates,
                     url=item.get('url', '')
                 ))
             return results
@@ -347,4 +388,3 @@ class LOCSource(NewspaperSource):
             self.logger.error(f"Search failed: {e}")
             return []
 
-import time # Added missing import

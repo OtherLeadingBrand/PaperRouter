@@ -100,9 +100,8 @@ def get_newspaper_info(lccn: str, source: NewspaperSource) -> Optional[Dict]:
     if not issues:
         return None
 
-    # Pick the first one's title
     title = issues[0].title if issues[0].title else "Unknown"
-    
+
     start_year = min(i.year for i in issues) if issues else None
     end_year = max(i.year for i in issues) if issues else None
 
@@ -110,31 +109,6 @@ def get_newspaper_info(lccn: str, source: NewspaperSource) -> Optional[Dict]:
         'lccn': lccn,
         'title': title,
         'place': 'Unknown',
-        'start_year': start_year,
-        'end_year': end_year,
-        'url': issues[0].url if issues else "",
-    }
-
-
-def get_newspaper_info(lccn: str, source: NewspaperSource) -> Optional[Dict]:
-    """Fetch metadata about a newspaper by its LCCN using the source abstraction."""
-    # We can use fetch_issues to get the date range efficiently
-    issues = source.fetch_issues(lccn)
-    if not issues:
-        return None
-
-    # Pick the most frequent title or just the first one's title
-    title = issues[0].title if issues[0].title else "Unknown"
-    
-    start_year = min(i.year for i in issues) if issues else None
-    end_year = max(i.year for i in issues) if issues else None
-
-    # Note: Source might not provide place info as easily without title lookup
-    # For now, we'll return what we have. A full search_titles would be better if needed.
-    return {
-        'lccn': lccn,
-        'title': title,
-        'place': 'Unknown',  # Placeholder unless we add a specific title-info method
         'start_year': start_year,
         'end_year': end_year,
         'url': issues[0].url if issues else "",
@@ -313,24 +287,14 @@ class DownloadManager:
         elapsed = time.time() - start_time
         self.logger.info("\n" + "=" * 70)
         self.logger.info("PROCESS COMPLETE")
-        self.logger.info(f"Downloaded issues: {self.stats['downloaded']}")
-        self.logger.info(f"Skipped issues: {self.stats['skipped']}")
-        self.logger.info(f"Failed issues: {self.stats['failed']}")
+        self.logger.info(f"Pages downloaded: {self.stats['downloaded']}")
+        self.logger.info(f"Issues skipped: {self.stats['skipped']}")
+        self.logger.info(f"Issues failed: {self.stats['failed']}")
         self.logger.info(f"Time: {elapsed / 60:.1f} minutes")
         self.logger.info("=" * 70)
 
     def run_ocr_batch(self):
-        """Run OCR on all downloaded issues."""
-        self.logger.info("Starting batch OCR processing...")
-        for issue_id, info in self.metadata.get('downloaded', {}).items():
-            year = info.get('date', '')[:4]
-            pages = info.get('pages', [])
-            if not pages: continue
-            
-            self.logger.info(f"Batch OCR for {issue_id}...")
-            # We'd need to reconstruct PageMetadata objects here if we wanted to be strictly source-agnostic
-            # For now, batch OCR is a future enhancement with the new source architecture
-            pass
+        """Run OCR on all previously downloaded issues."""
         self.logger.info("=" * 70)
         self.logger.info(f"STARTING OCR BATCH: {self.newspaper_title}")
         self.logger.info(f"LCCN: {self.lccn} | Mode: {self.ocr_mode}")
@@ -339,40 +303,35 @@ class DownloadManager:
         issues_count = 0
         pages_count = 0
 
-        # Scan metadata for downloaded issues
         downloaded = self.metadata.get('downloaded', {})
         if not downloaded:
             self.logger.warning("No downloaded issues found in metadata!")
             return
 
         for issue_id, info in downloaded.items():
-            year = info.get('date', '')[:4]
-            pages = info.get('pages', [])
-            
-            if not pages:
+            issue_pages = info.get('pages', [])
+            if not issue_pages:
                 continue
-                
+
             issues_count += 1
-            self.logger.info(f"Processing issue {issue_id} ({len(pages)} pages)...")
-            
-            for page in pages:
-                page_num = page['page']
-                page_file = page['file'] # Relative to output_dir
-                
-                ocr_input = {
-                    'loc_url': f"{BASE_URL}/resource/{self.lccn}/{info['date']}/ed-{info['edition']}/?sp={page_num}",
-                    'issue_id': issue_id,
-                    'page': page_num,
-                    'year': year,
-                    'source_pdf': Path(page_file).name,
-                    'pdf_full_path': str((self.output_dir / page_file).absolute()),
-                    'newspaper_title': self.newspaper_title,
-                    'date': info['date']
-                }
-                
-                res = self.ocr_manager.process_issue_page(self.ocr_mode, ocr_input)
-                if any(r['success'] for r in res.values()):
-                    pages_count += 1
+            self.logger.info(f"Processing issue {issue_id} ({len(issue_pages)} pages)...")
+
+            for page_info in issue_pages:
+                page_num = page_info['page']
+                page_file = page_info['file']
+                pdf_path = self.output_dir / page_file
+
+                # Reconstruct a PageMetadata for the OCR manager
+                page_meta = PageMetadata(
+                    issue_date=info['date'],
+                    edition=info['edition'],
+                    page_num=page_num,
+                    url=self.source.build_page_url(self.lccn, info['date'], info['edition'], page_num),
+                    lccn=self.lccn
+                )
+
+                self.ocr_manager.process_page(page_meta, self.source, self.ocr_mode, pdf_path=pdf_path)
+                pages_count += 1
 
         self.logger.info("\n" + "=" * 70)
         self.logger.info(f"OCR batch complete.")
