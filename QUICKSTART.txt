@@ -1,107 +1,259 @@
 ================================================================================
-         LOC NEWSPAPER DOWNLOADER - QUICK START GUIDE
-         Library of Congress  -  Chronicling America
+         NEWSPAPER DOWNLOADER - QUICK START GUIDE
+         Download historical newspapers from the Library of Congress
 ================================================================================
 
-For Complete Beginners - Step by Step Instructions
----------------------------------------------------
+WHAT IS THIS?
+-------------
+This tool downloads scanned newspaper pages from the Library of Congress's
+"Chronicling America" collection -- millions of pages of historical American
+newspapers, free and in the public domain.
 
-STEP 1: Install Python
------------------------
-1. Go to https://www.python.org/downloads/
-2. Click "Download Python" (latest version)
-3. Run the installer
-4. IMPORTANT: Check the box "Add Python to PATH"
-5. Click "Install Now"
-6. Wait for installation to complete
-7. Restart your computer
+You get one PDF per page. Optionally, the tool can also extract the text
+from each page (called "OCR") so you can search and copy the words.
 
 
-STEP 2: Find Your Newspaper
-----------------------------
-Every newspaper has an LCCN identifier (Library of Congress Control Number).
+================================================================================
+BEFORE YOU START
+================================================================================
 
-   Search by name:
-     python downloader.py --search "Freeland Tribune"
+You need Python installed on your computer. If you don't have it:
 
-   Browse online:
-     https://chroniclingamerica.loc.gov/
+  1. Go to https://www.python.org/downloads/
+  2. Click the big "Download Python" button
+  3. Run the installer
+  4. ** IMPORTANT: Check the box that says "Add Python to PATH" **
+  5. Click "Install Now"
+  6. Restart your computer after it finishes
 
-Common examples:
-   sn87080287   Freeland Tribune (Freeland, PA) 1888-1921
-   sn83045462   Evening Star (Washington, DC) 1854-1972
-   sn83030214   New-York Tribune (New York, NY) 1866-1924
+Not sure if you have Python? Open Command Prompt and type:
+  python --version
 
-
-STEP 3: Run the Downloader
----------------------------
-
-OPTION A - Graphical Interface (Easiest):
-   1. Double-click "run_gui.bat"
-   2. Enter the LCCN (or search by name in the search box)
-   3. Choose your download options
-   4. Click "Start Download"
-   5. Wait for completion
-
-OPTION B - Command Line:
-   1. Open Command Prompt in this folder
-      (Click the address bar at top of folder, type "cmd", press Enter)
-   2. Type one of these commands:
-
-      Download all issues of a newspaper:
-        python downloader.py --lccn sn87080287
-
-      Download specific years only:
-        python downloader.py --lccn sn87080287 --years 1900-1905
-
-      Download several year ranges:
-        python downloader.py --lccn sn87080287 --years 1900-1905,1910,1915-1920
+If you see a version number (like "Python 3.12.0"), you're good.
+If you see an error, install Python using the steps above.
 
 
-STEP 4: Find Your Downloaded Files
------------------------------------
-1. Look in the "downloads/<lccn>" folder
-2. Files are organized by year
-3. Each file is a PDF of one newspaper page
+================================================================================
+THE EASY WAY: USE THE GRAPHICAL INTERFACE
+================================================================================
+
+This is the recommended way to use the tool if you're not comfortable
+with the command line.
+
+STEP 1: Open the app
+  - Double-click "run_gui.bat" in this folder
+  - A window will open with the title "LOC Newspaper Downloader"
+  - (First time: it may take a moment to install a dependency)
+
+STEP 2: Find your newspaper
+  - Every newspaper has a unique ID called an "LCCN"
+    (Library of Congress Control Number)
+  - If you already know the LCCN, type it in the LCCN box and click
+    "Look Up" to confirm you have the right paper
+  - If you don't know it, type a name in the Search box (like
+    "Freeland Tribune") and press Enter or click Search
+  - Click a result in the list to select it
+
+  Some example LCCNs to try:
+    sn87080287   Freeland Tribune (Freeland, PA)
+    sn83045462   Evening Star (Washington, DC)
+    sn83030214   New-York Tribune (New York, NY)
+
+  You can also browse the full collection online:
+    https://chroniclingamerica.loc.gov/
+
+STEP 3: Choose your options
+  - Output Folder: Where the files get saved (default is "downloads")
+  - Years: Leave on "All available" to get everything, or pick "Custom"
+    and type a range like "1900-1905" or "1900,1903,1910-1915"
+  - Speed: Leave on "Safe" unless you have a reason to change it
+  - OCR: See "WHAT IS OCR?" below. Leave on "None" if you just want PDFs.
+
+STEP 4: Download
+  - Click "Start Download"
+  - Watch the progress bar and log output
+  - This will take a while! The tool waits 15 seconds between files
+    to avoid overloading the Library of Congress servers. This is normal.
+  - You can click "Stop" at any time. Your progress is saved, and you
+    can click "Start Download" again later to pick up where you left off.
+
+STEP 5: Find your files
+  - Open the output folder (default: "downloads" in this folder)
+  - Inside you'll see a folder named after your newspaper's LCCN
+  - Inside that are year folders (1900, 1901, etc.)
+  - Each year folder has the PDF files for that year's issues
+
+  The files are named like this:
+    sn87080287_1900-01-04_ed-1_page01.pdf
+    |          |          |     |
+    |          |          |     Page number
+    |          |          Edition (usually 1)
+    |          Date of the newspaper
+    Newspaper ID (LCCN)
 
 
-TIPS:
------
-- Downloads take time! The script waits 15 seconds between files to be polite
-  to the Library of Congress servers. This is normal and necessary.
+================================================================================
+THE COMMAND LINE WAY
+================================================================================
 
-- You can stop anytime! Close the window or press Ctrl+C. Run the command
-  again to resume where you left off.
+If you prefer typing commands, or want to automate downloads:
 
-- Already downloaded files are skipped automatically.
+STEP 1: Open a Command Prompt in this folder
+  - Open this folder in File Explorer
+  - Click the address bar at the top of the window
+  - Type "cmd" and press Enter
+  - A black Command Prompt window opens, already in the right folder
 
-- If some files fail, re-run with:
-    python downloader.py --lccn <YOUR_LCCN> --retry-failed
+STEP 2: Search for a newspaper
+  python downloader.py --search "Freeland Tribune"
 
-- Check "download.log" in the output folder if something goes wrong.
+  This prints a list of matching newspapers with their LCCNs.
+
+STEP 3: Download it
+  python downloader.py --lccn sn87080287
+
+  Other useful variations:
+
+    Download only certain years:
+      python downloader.py --lccn sn87080287 --years 1900-1905
+
+    Download just one issue (to test):
+      python downloader.py --lccn sn87080287 --max-issues 1
+
+    Download with OCR text extraction:
+      python downloader.py --lccn sn87080287 --ocr loc
 
 
-TROUBLESHOOTING:
-----------------
-Problem: "Python is not recognized"
-Solution: Reinstall Python and check "Add Python to PATH".
+================================================================================
+WHAT IS OCR?
+================================================================================
+
+OCR stands for "Optical Character Recognition" -- it reads the text from
+the scanned newspaper images so you can search, copy, and paste the words.
+
+This tool offers two types of OCR:
+
+  LOC (fast, recommended)
+    Downloads text that the Library of Congress has already extracted.
+    This is quick and doesn't use much of your computer's resources.
+    The quality varies -- old or damaged pages may have garbled text.
+    In the GUI: select "LOC (Fast)" under OCR.
+    Command line: --ocr loc
+
+  Surya (slow, higher quality)
+    Runs an AI model on your own computer to read the text fresh.
+    Produces better results, especially on difficult pages.
+    ** Requires extra software: pip install surya-ocr pymupdf torch **
+    ** Uses a LOT of memory (RAM). The tool will monitor usage and **
+    ** stop if your computer runs low. **
+    In the GUI: select "Surya (AI)" under OCR.
+    Command line: --ocr surya
+
+  Both
+    Tries LOC first, then also runs Surya. You get two text files per
+    page so you can compare.
+    In the GUI: select "Both" under OCR.
+    Command line: --ocr both
+
+  None (default)
+    Just downloads the PDF page scans with no text extraction.
+
+OCR text files are saved alongside the PDFs with "_loc.txt" or "_surya.txt"
+at the end of the filename.
+
+You can also run OCR later on files you've already downloaded:
+  - In the GUI: select your OCR mode, then click the "OCR Batch" button
+  - Command line: python downloader.py --lccn sn87080287 --ocr loc --ocr-batch
+
+
+================================================================================
+TIPS & FREQUENTLY ASKED QUESTIONS
+================================================================================
+
+Q: Why is it so slow?
+A: The 15-second delay between downloads is intentional. The Library of
+   Congress will temporarily block your access if you make too many requests
+   too quickly. The "Safe" speed keeps you well under their limits.
+
+Q: Can I stop and come back later?
+A: Yes! The tool saves your progress automatically. Just run the same
+   command again (or click Start Download in the GUI) and it will skip
+   everything it already has. You'll never download the same page twice.
+
+Q: Some pages failed. What do I do?
+A: Run the download again with "Retry failed" checked in the GUI, or
+   add --retry-failed on the command line. The tool remembers which
+   pages had errors and will try those again.
+
+Q: I got blocked / "429 Too Many Requests"
+A: The tool handles this automatically with retries and backoff. If it
+   keeps happening, wait a few minutes and try again. Make sure you're
+   using "Safe" speed.
+
+Q: How much disk space do I need?
+A: It depends on the newspaper. Each page is typically 100-500 KB as a PDF.
+   A newspaper with 4 pages per issue, published weekly for 20 years, would
+   be roughly 1,000 issues x 4 pages x 300 KB = about 1.2 GB.
+
+Q: Where do I find more newspapers?
+A: Browse the full collection at https://chroniclingamerica.loc.gov/
+   Use the "Search Pages" or "All Digitized Newspapers" links.
+   The LCCN is shown on each newspaper's page.
+
+Q: The OCR text looks garbled.
+A: OCR on old newspapers is inherently imperfect -- faded ink, unusual
+   fonts, and damaged pages all reduce quality. Try Surya OCR for
+   potentially better results, or use the LOC text as a rough guide.
+
+Q: Can I download from archives other than the Library of Congress?
+A: The tool is designed to support multiple sources, but currently only
+   the Library of Congress is implemented. Check back for updates or
+   see DEVELOPER_GUIDE.md if you'd like to contribute one.
+
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Problem: "'python' is not recognized as an internal or external command"
+Fix:     Python isn't installed, or wasn't added to PATH.
+         Reinstall Python and make sure to check "Add Python to PATH".
 
 Problem: "No module named 'requests'"
-Solution: Open Command Prompt and type: pip install requests
+Fix:     Open Command Prompt and type: pip install requests
+         Or just use run.bat / run_gui.bat -- they install it for you.
 
 Problem: "No issues found"
-Solution: Verify the LCCN at https://chroniclingamerica.loc.gov/
-         Not all newspapers have been digitized.
+Fix:     Double-check the LCCN at https://chroniclingamerica.loc.gov/
+         Not all newspapers have been digitized. Try searching by name.
 
-Problem: Download is very slow
-Solution: This is normal! The delay prevents you from being rate-limited.
+Problem: The GUI window doesn't open / closes immediately
+Fix:     Try running "python gui.py" from Command Prompt to see the error.
+         Most likely a missing dependency (requests or tkinter).
 
-Problem: Script stopped/crashed
-Solution: Just run it again. It resumes automatically.
+Problem: "Failed to import Surya" when using AI OCR
+Fix:     Install the extra dependencies:
+           pip install surya-ocr pymupdf torch
+         Surya requires a modern GPU for best performance but will
+         run (slowly) on CPU.
+
+Problem: Script crashed or computer froze during Surya OCR
+Fix:     Surya uses a lot of memory. The harness is supposed to prevent
+         this, but if it happens:
+         1. Restart the script -- progress is saved, nothing is lost
+         2. Try setting a lower memory limit:
+              set HARNESS_MEM_MB=4000
+              python downloader.py --lccn sn87080287 --ocr surya
+         3. Consider using "LOC" OCR instead -- it's much lighter
 
 
-NEED MORE HELP?
----------------
-Read the full README.md file for detailed documentation.
+================================================================================
+STILL STUCK?
+================================================================================
+
+Check these files for more details:
+  README.md          - Full feature documentation and CLI reference
+  DEVELOPER_GUIDE.md - Technical architecture (for programmers)
+  download.log       - Detailed log in your output folder
 
 ================================================================================
