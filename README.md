@@ -59,7 +59,7 @@ pip install -r requirements.txt
 
 **With AI OCR** (local text extraction using Surya — see [OCR Options Explained](#ocr-options-explained)):
 ```bash
-pip install -r requirements.txt surya-ocr pymupdf torch
+pip install -r requirements.txt surya-ocr pymupdf torch Pillow
 ```
 
 > **Windows shortcut:** You can skip manual setup entirely. Double-click `run_gui.bat` and it will check for Python, install missing dependencies, and launch the web interface automatically.

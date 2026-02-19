@@ -20,8 +20,6 @@ from pathlib import Path
 from queue import Queue, Empty
 
 from flask import Flask, Response, request, jsonify
-import tkinter as tk
-from tkinter import filedialog
 
 # ---------------------------------------------------------------------------
 # Paths & constants
@@ -34,7 +32,7 @@ PROGRESS_RE = re.compile(r'\[(\d+)/(\d+)\]\s+Processing')
 FOUND_ISSUES_RE = re.compile(r'Found\s+(\d+)\s+issues')
 EMPTY_WARNING_RE = re.compile(r'No issues found matching criteria')
 
-PORT = 5000
+PORT_CANDIDATES = [5000, 5001, 8080]
 
 
 def _needs_harness(ocr_mode: str) -> bool:
@@ -187,14 +185,16 @@ class DownloadManager:
                 # Force kill the process and all its children. 
                 # This ensures harness.py and its children (downloader and workers) are gone.
                 subprocess.run(['taskkill', '/F', '/T', '/PID', str(self.process.pid)],
-                               creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True)
-                
+                               creationflags=subprocess.CREATE_NO_WINDOW,
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
                 # Double-check for harness.py's specific PID file if it exists
                 if HARNESS_SCRIPT.exists() and (SCRIPT_DIR / ".harness.pid").exists():
                     try:
                         h_pid = int((SCRIPT_DIR / ".harness.pid").read_text().strip())
                         subprocess.run(['taskkill', '/F', '/T', '/PID', str(h_pid)],
-                                       creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True)
+                                       creationflags=subprocess.CREATE_NO_WINDOW,
+                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     except:
                         pass
             else:
@@ -349,8 +349,11 @@ def lookup():
 @app.route("/api/browse", methods=["POST"])
 def browse():
     """Open a native directory picker and return the selected path."""
-    import tkinter as tk
-    from tkinter import filedialog
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+    except ImportError:
+        return jsonify({"path": "", "error": "Manual path entry required: Tkinter not installed"}), 200
     root = tk.Tk()
     root.withdraw()
     # Bring to front
@@ -858,7 +861,9 @@ async function lookupLCCN() {
 async function browseFolder() {
   const resp = await fetch('/api/browse', {method: 'POST'});
   const data = await resp.json();
-  if (data.path) {
+  if (data.error) {
+    alert(data.error);
+  } else if (data.path) {
     $('output').value = data.path;
   }
 }
@@ -883,17 +888,33 @@ def main():
         print(f"ERROR: downloader.py not found at {DOWNLOADER_SCRIPT}")
         sys.exit(1)
 
+    import socket
+
+    chosen_port = None
+    for port in PORT_CANDIDATES:
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(("127.0.0.1", port))
+            chosen_port = port
+            break
+        except OSError:
+            print(f"Port {port} is unavailable, trying next...")
+
+    if chosen_port is None:
+        print(f"ERROR: All candidate ports {PORT_CANDIDATES} are in use.")
+        sys.exit(1)
+
     # Open browser after a short delay to let the server start
     def open_browser():
         time.sleep(1.0)
-        webbrowser.open(f"http://localhost:{PORT}")
+        webbrowser.open(f"http://localhost:{chosen_port}")
 
     threading.Thread(target=open_browser, daemon=True).start()
 
-    print(f"Starting web GUI on http://localhost:{PORT}")
+    print(f"Starting web GUI on http://localhost:{chosen_port}")
     print("Press Ctrl+C to stop the server.")
 
-    app.run(host="127.0.0.1", port=PORT, debug=False, threaded=True)
+    app.run(host="127.0.0.1", port=chosen_port, debug=False, threaded=True)
 
 
 if __name__ == "__main__":

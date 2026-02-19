@@ -202,11 +202,10 @@ Models are lazy-loaded on first use. The `FoundationPredictor` is shared between
 Because Surya loads large ML models into memory, Tier 2 OCR can easily consume many gigabytes of RAM. The `harness.py` wrapper provides safety:
 
 - Spawns `downloader.py` as a child process in its own process group
--   Spawns `downloader.py` as a child process in its own process group
--   Polls the process tree every 10 seconds for memory and CPU usage
--   Kills the entire tree if RSS exceeds **75% of available RAM** (or `HARNESS_MEM_MB`)
--   Kills on timeout after **120 minutes** (or `HARNESS_TIMEOUT`)
--   Writes a PID file (`.harness.pid`) for external kill support (`python harness.py --kill`)
+- Polls the process tree every 10 seconds for memory and CPU usage
+- Kills the entire tree if RSS exceeds **75% of available RAM** (or `HARNESS_MEM_MB`)
+- Kills on timeout after **120 minutes** (or `HARNESS_TIMEOUT`)
+- Writes a PID file (`.harness.pid`) for external kill support (`python harness.py --kill`)
 
 The Web GUI routes through the harness automatically when Surya is active.
 
