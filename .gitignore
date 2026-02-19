@@ -29,6 +29,10 @@ test_download*/
 *.tmp
 *.bak
 *.log
+harness.log
+.harness.pid
+debug_*_resp.json
+debug_ocr_api.py
 failing_issue.json
 inspect_segments*.py
 check_item_json.py
@@ -37,5 +41,6 @@ test_years.py
 # IDEs
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
