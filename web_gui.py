@@ -483,9 +483,49 @@ HTML_PAGE = r"""<!DOCTYPE html>
   .status-bar {
     font-size: 0.8rem; color: var(--muted); text-align: center; padding: 6px;
   }
+
+  /* Modal Overlay */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 1000;
+  }
+  .modal-content {
+    background: #fff;
+    padding: 24px;
+    border-radius: var(--radius);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  .modal-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 8px; }
+  .modal-message { color: var(--muted); font-size: 0.95rem; }
+  .modal-spinner {
+    width: 40px; height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px auto;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 </style>
 </head>
 <body>
+<div id="modal-overlay" class="modal-overlay">
+  <div class="modal-content">
+    <div id="modal-spinner" class="modal-spinner"></div>
+    <div id="modal-title" class="modal-title">Please Wait</div>
+    <div id="modal-message" class="modal-message">Processing your request...</div>
+  </div>
+</div>
 
 <h1>PaperRouter</h1>
 <p class="subtitle">A robust multi-source newspaper downloader and OCR suite</p>
@@ -591,6 +631,16 @@ HTML_PAGE = r"""<!DOCTYPE html>
 const $ = id => document.getElementById(id);
 const val = id => $(id).value.trim();
 const radio = name => document.querySelector(`input[name="${name}"]:checked`)?.value;
+
+function showModal(title, message) {
+  $('modal-title').textContent = title;
+  $('modal-message').textContent = message;
+  $('modal-overlay').style.display = 'flex';
+}
+
+function hideModal() {
+  $('modal-overlay').style.display = 'none';
+}
 
 let eventSource = null;
 
@@ -730,6 +780,7 @@ async function searchNewspapers() {
   const resultsDiv = $('search-results');
   resultsDiv.innerHTML = '<div style="padding:10px;color:var(--muted)">Searching...</div>';
   resultsDiv.style.display = 'block';
+  showModal('Searching', 'Searching newspapers... this may take a few minutes.');
 
   try {
     const resp = await fetch('/api/search', {
@@ -748,6 +799,8 @@ async function searchNewspapers() {
     }
   } catch (e) {
     resultsDiv.innerHTML = '<div style="padding:10px;color:var(--danger)">Search failed.</div>';
+  } finally {
+    hideModal();
   }
 }
 
@@ -761,11 +814,13 @@ async function lookupLCCN() {
   const lccn = val('lccn');
   if (!lccn) return;
   
+  $('search-results').style.display = 'none';
   $('info-display').textContent = 'Looking up newspaper details...';
   const btn = document.querySelectorAll('.btn-secondary')[0];
   const oldText = btn.textContent;
   btn.disabled = true;
   btn.textContent = '...';
+  showModal('Looking Up', 'Looking up newspaper details... this may take a few minutes.');
 
   try {
     const resp = await fetch('/api/lookup', {
@@ -796,6 +851,7 @@ async function lookupLCCN() {
   } finally {
     btn.disabled = false;
     btn.textContent = oldText;
+    hideModal();
   }
 }
 
