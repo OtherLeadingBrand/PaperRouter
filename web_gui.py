@@ -170,13 +170,18 @@ class DownloadManager:
             except Exception:
                 pass
         try:
-            self.process.terminate()
-            self.process.wait(timeout=3)
-        except Exception:
-            try:
-                self.process.kill()
-            except Exception:
-                pass
+            if sys.platform == 'win32':
+                # Force kill the process and all its children
+                subprocess.run(['taskkill', '/F', '/T', '/PID', str(self.process.pid)],
+                               creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True)
+            else:
+                self.process.terminate()
+                try:
+                    self.process.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    self.process.kill()
+        except Exception as e:
+            print(f"Error killing process: {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -651,7 +656,6 @@ async function startDownload() {
 }
 
 async function stopDownload() {
-  if (!confirm('Stop the download? Progress is saved; you can resume later.')) return;
   await fetch('/api/download/stop', {method: 'POST'});
 }
 
@@ -702,6 +706,7 @@ async function searchNewspapers() {
 function selectResult(lccn) {
   $('lccn').value = lccn;
   $('search-results').style.display = 'none';
+  lookupLCCN(); // Auto-lookup on selection
 }
 
 async function lookupLCCN() {

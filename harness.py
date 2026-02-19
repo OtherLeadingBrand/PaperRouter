@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
 """
-Process harness for the LOC Newspaper Downloader.
+Process harness for PaperRouter.
 
 Wraps downloader.py to:
   - Monitor memory and CPU usage
