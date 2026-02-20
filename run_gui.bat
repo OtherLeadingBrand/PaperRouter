@@ -15,16 +15,10 @@ if errorlevel 1 (
 )
 
 REM Install dependencies if missing
-python -c "import requests" >nul 2>&1
+python -c "import requests, flask, psutil" >nul 2>&1
 if errorlevel 1 (
     echo Installing required dependencies...
-    python -m pip install requests
-    echo.
-)
-python -c "import flask" >nul 2>&1
-if errorlevel 1 (
-    echo Installing Flask...
-    python -m pip install flask
+    python -m pip install -r "%~dp0requirements.txt"
     echo.
 )
 

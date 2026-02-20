@@ -2,6 +2,7 @@ import json
 import logging
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Any
 import requests
@@ -71,39 +72,35 @@ class LOCSource(NewspaperSource):
             f"&c={self.API_PAGE_SIZE}&fo=json"
         )
 
-        page_num = 0
-        while api_url:
-            page_num += 1
-            self.logger.info(f"  Fetching page {page_num} of issue list...")
+        # 1. Fetch first page to get total count
+        try:
+            response = self.session.get(api_url, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+        except Exception as e:
+            self.logger.error(f"Failed to fetch issue list (initial page): {e}")
+            return []
 
-            try:
-                response = self.session.get(api_url, timeout=30)
-                response.raise_for_status()
-                data = response.json()
-            except Exception as e:
-                self.logger.error(f"Failed to fetch issue list (page {page_num}): {e}")
-                break
-
-            results = data.get('results', [])
-            pagination = data.get('pagination', {})
-
-            for item in results:
+        results = data.get('results', [])
+        pagination = data.get('pagination', {})
+        total_items = pagination.get('total', 0)
+        
+        def process_json_data(data):
+            batch = []
+            for item in data.get('results', []):
                 item_date = item.get('date', '')
                 if not item_date or len(item_date) < 8:
                     continue
-
                 try:
                     year = int(item_date[:4])
                 except (ValueError, IndexError):
+                    self.logger.warning(f"  Skipping item with malformed date: '{item_date}' (URL: {item.get('url')})")
                     continue
-
                 if year_set and year not in year_set:
                     continue
-
                 item_url = item.get('url', '') or item.get('id', '')
                 if not item_url:
                     continue
-
                 edition = 1
                 if '/ed-' in item_url:
                     try:
@@ -111,22 +108,45 @@ class LOCSource(NewspaperSource):
                         edition = int(ed_part)
                     except (ValueError, IndexError):
                         edition = 1
-
-                all_issues.append(IssueMetadata(
-                    date=item_date,
-                    edition=edition,
-                    url=item_url,
-                    year=year,
-                    lccn=lccn,
+                batch.append(IssueMetadata(
+                    date=item_date, edition=edition, url=item_url,
+                    year=year, lccn=lccn,
                     title=item.get('title', '').strip().rstrip('.')
                 ))
+            return batch
 
-            next_url = pagination.get('next') if isinstance(pagination, dict) else None
-            api_url = next_url if next_url else None
+        all_issues.extend(process_json_data(data))
+
+        # 2. Parallel fetch remaining pages
+        total_pages = (total_items + self.API_PAGE_SIZE - 1) // self.API_PAGE_SIZE
+        if total_pages > 1:
+            self.logger.info(f"  Parallel fetching {total_pages - 1} remaining pages...")
             
-            # Simple rate limiting for scanning
-            if api_url:
-                time.sleep(2.0)
+            import threading
+            fetch_lock = threading.Lock()
+            last_fetch_time = [time.time()]
+            
+            def fetch_page(p):
+                with fetch_lock:
+                    now = time.time()
+                    sleep_time = max(0, 2.0 - (now - last_fetch_time[0]))
+                    last_fetch_time[0] = now + sleep_time
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
+
+                page_url = f"{api_url}&sp={p}"
+                try:
+                    resp = self.session.get(page_url, timeout=30)
+                    resp.raise_for_status()
+                    return process_json_data(resp.json())
+                except Exception as e:
+                    self.logger.error(f"    Failed to fetch page {p}: {e}")
+                    return []
+
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                futures = [executor.submit(fetch_page, p) for p in range(2, total_pages + 1)]
+                for future in as_completed(futures):
+                    all_issues.extend(future.result())
 
         all_issues.sort(key=lambda x: (x.date, x.edition))
         self.logger.info(f"Found {len(all_issues)} issues matching criteria.")
@@ -376,15 +396,51 @@ class LOCSource(NewspaperSource):
                 if isinstance(dates, list):
                     dates = dates[0] if dates else ''
 
+                # Use the first thumbnail image if available
+                image_url = item.get('image_url', [])
+                thumbnail = image_url[0] if image_url else ''
+
                 results.append(TitleResult(
                     lccn=lccn,
                     title=title,
                     place=location,
                     dates=dates,
-                    url=item.get('url', '')
+                    url=item.get('url', ''),
+                    thumbnail=thumbnail
                 ))
             return results
         except Exception as e:
             self.logger.error(f"Search failed: {e}")
             return []
+
+    def get_details(self, lccn: str) -> Optional[Dict]:
+        """Fetch basic metadata for an LCCN using the search API with an lccn filter."""
+        results = self.search_titles(f'lccn:"{lccn}"')
+        if not results:
+            return None
+        
+        # Use the first match
+        r = results[0]
+        
+        # Try to guess start/end years from the dates string (often YYYY-YYYY or YYYY-present)
+        start_year = None
+        end_year = None
+        if r.dates:
+            try:
+                found_years = re.findall(r'\d{4}', r.dates)
+                if len(found_years) >= 1:
+                    start_year = int(found_years[0])
+                if len(found_years) >= 2:
+                    end_year = int(found_years[1])
+            except: pass
+
+        return {
+            'lccn': r.lccn,
+            'title': r.title,
+            'place': r.place,
+            'start_year': start_year,
+            'end_year': end_year,
+            'url': r.url,
+            'thumbnail': r.thumbnail
+        }
 

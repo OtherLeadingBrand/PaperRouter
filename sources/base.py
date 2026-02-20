@@ -45,6 +45,7 @@ class TitleResult:
     place: str = ""
     dates: str = ""
     url: str = ""
+    thumbnail: str = ""
 
 class NewspaperSource(ABC):
     """Abstract base class for all newspaper archive sources (LOC, Trove, etc.)"""
@@ -87,6 +88,11 @@ class NewspaperSource(ABC):
     @abstractmethod
     def search_titles(self, query: str) -> List[TitleResult]:
         """Search for newspapers matching the query."""
+        pass
+
+    @abstractmethod
+    def get_details(self, lccn: str) -> Optional[Dict]:
+        """Fetch basic metadata (title, start/end years, thumbnail) for a specific LCCN."""
         pass
 
     def build_page_url(self, lccn: str, date: str, edition: int, page_num: int) -> str:

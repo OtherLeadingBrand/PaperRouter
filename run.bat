@@ -20,11 +20,11 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Check if requests library is installed
-python -c "import requests" >nul 2>&1
+REM Check if required libraries are installed
+python -c "import requests, flask, psutil" >nul 2>&1
 if errorlevel 1 (
     echo Installing required dependencies...
-    python -m pip install requests
+    python -m pip install -r "%~dp0requirements.txt"
     echo.
 )
 

@@ -1,15 +1,22 @@
 import logging
+import time
 from pathlib import Path
-from typing import Dict, Optional
-
-from sources.base import PageMetadata, NewspaperSource
+from typing import List, Dict, Optional, Union
 
 try:
     import fitz  # PyMuPDF
     from PIL import Image
+    from surya.ocr import Predictor
+    from surya.model.detection.model import load_model as load_det_model, load_predictor as load_det_predictor
+    from surya.model.recognition.model import load_model as load_rec_model, load_predictor as load_rec_predictor
+    from surya.model.ordering.processor import load_processor
+    from surya.model.ordering.model import load_model as load_order_model
+    from surya.postprocessing.text import sort_text_lines
     SURYA_AVAILABLE = True
 except ImportError:
     SURYA_AVAILABLE = False
+
+from sources.base import PageMetadata, NewspaperSource
 
 
 class SuryaOCREngine:
@@ -45,64 +52,82 @@ class SuryaOCREngine:
             self.logger.error(f"Failed to import Surya: {e}")
             raise ImportError("surya-ocr and pymupdf are required for local OCR.")
 
-    def process_page(self, page: PageMetadata, output_dir: Path, pdf_path: Optional[Path] = None) -> Dict:
-        """Process a page using Surya AI models."""
-        if not pdf_path or not pdf_path.exists():
-            return {'success': False, 'error': f'PDF not found: {pdf_path}'}
+    def process_pages(self, pages: List[PageMetadata], output_dir: Path, pdf_paths: List[Path]) -> List[Dict]:
+        """Process multiple pages in a batch using Surya AI models."""
+        if not pdf_paths:
+            return []
 
         try:
             self._load_models()
             from surya.common.surya.schema import TaskNames
-            from datetime import datetime
             
-            # Use zoom for better quality
-            doc = fitz.open(str(pdf_path))
-            fitz_page = doc.load_page(0)
-            zoom = 1.5
-            mat = fitz.Matrix(zoom, zoom)
-            pix = fitz_page.get_pixmap(matrix=mat)
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            doc.close()
+            self.logger.debug(f"Running batched Surya on {len(pdf_paths)} images")
+            
+            import gc
+            chunk_size = 4
+            results = []
+            
+            for i in range(0, len(pdf_paths), chunk_size):
+                chunk_paths = pdf_paths[i:i + chunk_size]
+                chunk_pages = pages[i:i + chunk_size]
+                
+                chunk_images = []
+                for pdf_path in chunk_paths:
+                    doc = fitz.open(str(pdf_path))
+                    fitz_page = doc.load_page(0)
+                    zoom = 1.5
+                    mat = fitz.Matrix(zoom, zoom)
+                    pix = fitz_page.get_pixmap(matrix=mat)
+                    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                    chunk_images.append(img)
+                    doc.close()
 
-            # 1. Layout & OCR
-            self.logger.debug(f"Running Surya on {pdf_path.name}")
-            layout_predictions = self.layout_predictor([img])
-            ocr_predictions = self.rec_predictor(
-                [img], 
-                task_names=[TaskNames.ocr_with_boxes], 
-                det_predictor=self.det_predictor
-            )
-            
-            layout_result = layout_predictions[0]
-            ocr_result = ocr_predictions[0]
+                # 1. Batch Layout & OCR
+                self.logger.debug(f"  Processing chunk {i//chunk_size + 1} ({len(chunk_images)} images)")
+                layout_predictions = self.layout_predictor(chunk_images)
+                ocr_predictions = self.rec_predictor(
+                    chunk_images, 
+                    task_names=[TaskNames.ocr_with_boxes] * len(chunk_images), 
+                    det_predictor=self.det_predictor
+                )
+                
+                for img in chunk_images:
+                    img.close()
+                gc.collect()
 
-            full_text = "\n".join([line.text for line in ocr_result.text_lines])
-            
-            # Save
-            filename = f"{page.issue_date}_ed-{page.edition}_page{page.page_num:02d}_surya.txt"
-            output_path = output_dir / filename
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            header = (
-                f"# OCR Text — {page.lccn} — {page.issue_date}\n"
-                f"# Page: {page.page_num}\n"
-                f"# OCR Method: surya-ai\n"
-                f"# ---\n\n"
-            )
-            
-            with open(output_path, 'w', encoding='utf-8') as f:
-                f.write(header + full_text)
+                for j, (page, layout_result, ocr_result) in enumerate(zip(chunk_pages, layout_predictions, ocr_predictions)):
+                    full_text = "\n".join([line.text for line in ocr_result.text_lines])
+                    
+                    filename = f"{page.issue_date}_ed-{page.edition}_page{page.page_num:02d}_surya.txt"
+                    output_path = output_dir / filename
+                    output_path.parent.mkdir(parents=True, exist_ok=True)
+                    
+                    header = (
+                        f"# OCR Text — {page.lccn} — {page.issue_date}\n"
+                        f"# Page: {page.page_num}\n"
+                        f"# OCR Method: surya-ai (batched)\n"
+                        f"# ---\n\n"
+                    )
+                    
+                    with open(output_path, 'w', encoding='utf-8') as f:
+                        f.write(header + full_text)
 
-            return {
-                'success': True,
-                'method': 'surya',
-                'text_file': filename,
-                'text_path': str(output_path),
-                'word_count': len(full_text.split())
-            }
+                    results.append({
+                        'success': True,
+                        'method': 'surya',
+                        'text_file': filename,
+                        'text_path': str(output_path),
+                        'word_count': len(full_text.split())
+                    })
+            return results
         except Exception as e:
-            self.logger.error(f"Surya OCR failed: {e}")
-            return {'success': False, 'error': str(e)}
+            self.logger.error(f"Batched Surya OCR failed: {e}")
+            return [{'success': False, 'error': str(e)}] * len(pages)
+
+    def process_page(self, page: PageMetadata, output_dir: Path, pdf_path: Optional[Path] = None) -> Dict:
+        """Process a single page using Surya AI models (legacy single-page wrapper)."""
+        res = self.process_pages([page], output_dir, [pdf_path] if pdf_path else [])
+        return res[0] if res else {'success': False, 'error': 'No result'}
 
 class OCRManager:
     """Orchestrates OCR processing across different engines using source abstractions."""
@@ -123,12 +148,25 @@ class OCRManager:
             else:
                 self.logger.warning(f"  Tier 1 OCR (Source): Failed: {res.error}")
 
+    def process_issue_batch(self, pages: List[PageMetadata], source: NewspaperSource, mode: str, pdf_paths: List[Path]):
+        """Process all pages of an issue as a batch where possible."""
+        year_dir = self.output_dir / str(pages[0].issue_date[:4])
+        
+        # Tier 1 typically sequential due to API per-page nature, but we can parallelize if source supports it
+        if mode in ('loc', 'both'):
+            for page in pages:
+                res = source.fetch_ocr_text(page, year_dir)
+                if res.success:
+                    self.logger.info(f"  Page {page.page_num} - Tier 1 OCR: Success, {res.word_count} words")
+
+        # Tier 2 (Surya) is where batching really helps GPU throughput
         if mode in ('surya', 'both'):
             if not self.surya_engine:
                 self.surya_engine = SuryaOCREngine(self.logger)
             
-            res = self.surya_engine.process_page(page, year_dir, pdf_path)
-            if res['success']:
-                self.logger.info(f"  Tier 2 OCR (Surya): Success, {res['word_count']} words")
-            else:
-                self.logger.error(f"  Tier 2 OCR (Surya): Failed: {res.get('error')}")
+            results = self.surya_engine.process_pages(pages, year_dir, pdf_paths)
+            for page, res in zip(pages, results):
+                if res['success']:
+                    self.logger.info(f"  Page {page.page_num} - Tier 2 OCR (Surya): Success, {res['word_count']} words")
+                else:
+                    self.logger.error(f"  Page {page.page_num} - Tier 2 OCR (Surya): Failed: {res.get('error')}")

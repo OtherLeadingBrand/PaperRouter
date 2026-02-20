@@ -32,7 +32,7 @@ PROGRESS_RE = re.compile(r'\[(\d+)/(\d+)\]\s+Processing')
 FOUND_ISSUES_RE = re.compile(r'Found\s+(\d+)\s+issues')
 EMPTY_WARNING_RE = re.compile(r'No issues found matching criteria')
 
-PORT_CANDIDATES = [5000, 5001, 8080]
+PORT_CANDIDATES = [5000, 5001, 8080, 5005, 8081, 8082, 8083, 8084]
 
 
 def _needs_harness(ocr_mode: str) -> bool:
@@ -167,7 +167,8 @@ class DownloadManager:
                 except Exception:
                     dead.append(q)
             for q in dead:
-                self.subscribers.remove(q)
+                if q in self.subscribers:
+                    self.subscribers.remove(q)
 
     def _kill_process(self):
         if not self.process or self.process.poll() is not None:
@@ -191,10 +192,12 @@ class DownloadManager:
                 # Double-check for harness.py's specific PID file if it exists
                 if HARNESS_SCRIPT.exists() and (SCRIPT_DIR / ".harness.pid").exists():
                     try:
-                        h_pid = int((SCRIPT_DIR / ".harness.pid").read_text().strip())
-                        subprocess.run(['taskkill', '/F', '/T', '/PID', str(h_pid)],
-                                       creationflags=subprocess.CREATE_NO_WINDOW,
-                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        h_pid_str = (SCRIPT_DIR / ".harness.pid").read_text().strip()
+                        if h_pid_str.isdigit():
+                            h_pid = int(h_pid_str)
+                            subprocess.run(['taskkill', '/F', '/T', '/PID', str(h_pid)],
+                                           creationflags=subprocess.CREATE_NO_WINDOW,
+                                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     except:
                         pass
             else:
@@ -252,6 +255,8 @@ def download_start():
     years = (data.get("years") or "").strip()
     if years:
         cmd.extend(["--years", years])
+    if data.get("max_issues"):
+        cmd.extend(["--max-issues", str(data.get("max_issues"))])
     if data.get("verbose"):
         cmd.append("--verbose")
     if data.get("retry_failed"):
@@ -380,314 +385,391 @@ HTML_PAGE = r"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PaperRouter</title>
+<title>PaperRouter — Historical Newspaper Suite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f7f7f8;
-    --card: #fff;
-    --border: #ddd;
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
-    --danger: #dc2626;
-    --danger-hover: #b91c1c;
-    --text: #1e293b;
-    --muted: #64748b;
-    --radius: 6px;
+    --bg: #0f172a;
+    --card: rgba(30, 41, 59, 0.7);
+    --card-border: rgba(255, 255, 255, 0.1);
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --accent: #8b5cf6;
+    --danger: #ef4444;
+    --danger-hover: #dc2626;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --radius-lg: 12px;
+    --radius-md: 8px;
+    --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg); color: var(--text); line-height: 1.5;
-    max-width: 860px; margin: 0 auto; padding: 24px 16px;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent),
+                      radial-gradient(circle at bottom left, rgba(139, 92, 246, 0.1), transparent);
+    color: var(--text);
+    line-height: 1.6;
+    max-width: 900px; margin: 0 auto; padding: 40px 20px;
   }
-  h1 { font-size: 1.5rem; margin-bottom: 2px; }
-  .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; }
+  header { margin-bottom: 32px; text-align: left; }
+  h1 { 
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.25rem; font-weight: 700; 
+    background: linear-gradient(to right, #fff, #94a3b8);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
+  }
+  .subtitle { color: var(--muted); font-size: 1rem; }
+  
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+
   .card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 16px; margin-bottom: 16px;
+    background: var(--card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, border-color 0.2s;
   }
-  .card h2 { font-size: 0.95rem; color: var(--muted); text-transform: uppercase;
-    letter-spacing: 0.05em; margin-bottom: 12px; }
-  label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
-  input[type="text"], select {
-    width: 100%; padding: 7px 10px; border: 1px solid var(--border);
-    border-radius: var(--radius); font-size: 0.9rem;
+  /* .card:hover { border-color: rgba(59, 130, 246, 0.3); } */
+
+  .card h2 { 
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.8rem; color: var(--primary); text-transform: uppercase;
+    letter-spacing: 0.1em; margin-bottom: 16px; font-weight: 700;
   }
-  input[type="text"]:focus, select:focus {
-    outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+
+  label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+  
+  input[type="text"], input[type="number"], select {
+    width: 100%; padding: 10px 14px; 
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-md); 
+    font-size: 0.9rem; color: #fff;
+    transition: all 0.2s;
   }
-  .row { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
-  .row > * { flex: 1; min-width: 0; }
-  .row > .narrow { flex: 0 0 auto; }
-  .radio-group, .check-group {
-    display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
-    font-size: 0.85rem; padding: 4px 0;
+  input[type="text"]:focus, input[type="number"]:focus, select:focus {
+    outline: none; border-color: var(--primary); 
+    background: rgba(15, 23, 42, 0.8);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
   }
-  .radio-group label, .check-group label {
-    display: inline-flex; align-items: center; gap: 4px;
-    font-weight: normal; cursor: pointer;
-  }
+
+  .field-row { display: flex; gap: 10px; margin-bottom: 16px; align-items: flex-end; }
+  .field-row > div { flex: 1; }
+  .field-row.compact { margin-bottom: 0; }
+
   button {
-    padding: 8px 18px; border: none; border-radius: var(--radius);
-    font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.15s;
+    padding: 10px 20px; border: none; border-radius: var(--radius-md);
+    font-size: 0.9rem; font-weight: 600; cursor: pointer; 
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   }
   .btn-primary { background: var(--primary); color: #fff; }
-  .btn-primary:hover { background: var(--primary-hover); }
-  .btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
-  .btn-danger { background: var(--danger); color: #fff; }
-  .btn-danger:hover { background: var(--danger-hover); }
-  .btn-danger:disabled { background: #fca5a5; cursor: not-allowed; }
-  .btn-secondary { background: #e2e8f0; color: var(--text); }
-  .btn-secondary:hover { background: #cbd5e1; }
-  .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .actions .spacer { flex: 1; }
+  .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { background: #1e293b; color: var(--muted); cursor: not-allowed; transform: none; }
 
-  /* Progress */
-  .progress-wrap { margin-bottom: 16px; }
-  .progress-bar-bg {
-    height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;
-  }
-  .progress-bar-fill {
-    height: 100%; background: var(--primary); width: 0%;
-    transition: width 0.3s ease; border-radius: 4px;
-  }
-  .progress-bar-fill.indeterminate {
-    width: 30% !important;
-    animation: indeterminate 1.4s ease-in-out infinite;
-  }
-  @keyframes indeterminate {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(430%); }
-  }
-  .progress-text {
-    font-size: 0.8rem; color: var(--muted); text-align: center; margin-top: 4px;
-  }
+  .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+  .btn-danger:hover { background: var(--danger); color: #fff; }
+  .btn-danger:disabled { opacity: 0.3; cursor: not-allowed; }
 
-  /* Log */
-  #log {
-    background: #1e293b; color: #e2e8f0; font-family: "Cascadia Code", "Fira Code",
-    "Consolas", monospace; font-size: 0.8rem; line-height: 1.6;
-    padding: 12px; border-radius: var(--radius); height: 300px;
-    overflow-y: auto; white-space: pre-wrap; word-break: break-all;
-  }
+  .btn-secondary { background: rgba(255, 255, 255, 0.05); color: #fff; border: 1px solid var(--card-border); }
+  .btn-secondary:hover { background: rgba(255, 255, 255, 0.1); }
 
-  /* Search results */
+  /* Newspaper Listing */
   #search-results {
-    max-height: 120px; overflow-y: auto; font-size: 0.85rem;
-    border: 1px solid var(--border); border-radius: var(--radius);
-    display: none;
+    margin-top: 12px; max-height: 200px; overflow-y: auto;
+    border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.4);
+    display: none; border: 1px solid var(--card-border);
   }
-  #search-results .result-item {
-    padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #f1f5f9;
+  .result-item {
+    padding: 12px 16px; cursor: pointer; border-bottom: 1px solid var(--card-border);
+    transition: background 0.15s; display: flex; flex-direction: column;
   }
-  #search-results .result-item:hover { background: #f1f5f9; }
-  #search-results .result-item:last-child { border-bottom: none; }
+  .result-item:hover { background: rgba(59, 130, 246, 0.1); }
+  .result-item .r-title { font-weight: 600; font-size: 0.95rem; }
+  .result-item .r-meta { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
 
-  .status-bar {
-    font-size: 0.8rem; color: var(--muted); text-align: center; padding: 6px;
+  /* Preview Card */
+  .preview-box {
+    display: flex; gap: 16px; align-items: center; margin-top: 12px;
+    padding: 12px; background: rgba(255,255,255,0.03); border-radius: var(--radius-md);
+    border: 1px solid var(--card-border);
+  }
+  .preview-thumb {
+    width: 60px; height: 80px; background: #1e293b; border-radius: 4px;
+    object-fit: cover; border: 1px solid var(--card-border);
+  }
+  .preview-info { flex: 1; }
+  .preview-info h3 { font-size: 1rem; font-weight: 600; margin-bottom: 2px; }
+  .preview-info p { font-size: 0.8rem; color: var(--muted); }
+
+  /* Toggle Group */
+  .option-group { margin-bottom: 20px; }
+  .toggle-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .chip {
+    padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500;
+    cursor: pointer; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border);
+    transition: all 0.2s; color: var(--muted);
+  }
+  .chip:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  /* Progress Section */
+  .progress-section { margin-top: 32px; }
+  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .progress-stats { font-size: 0.9rem; font-weight: 600; }
+  .progress-status { font-size: 0.8rem; color: var(--muted); }
+
+  .progress-container {
+    height: 10px; background: rgba(255,255,255,0.05); border-radius: 10px;
+    overflow: hidden; position: relative;
+  }
+  .progress-bar {
+    height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent));
+    width: 0%; transition: width 0.4s cubic-bezier(0.1, 0.7, 0.1, 1);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  }
+  .progress-bar.indeterminate {
+    width: 40% !important;
+    animation: slide 1.5s infinite linear;
+  }
+  @keyframes slide {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(250%); }
   }
 
-  /* Modal Overlay */
-  .modal-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: none;
-    align-items: center; justify-content: center;
-    z-index: 1000;
+  /* Log Viewer */
+  .log-card { margin-top: 24px; padding: 0; overflow: hidden; }
+  .log-header { 
+    display: flex; justify-content: space-between; align-items: center; 
+    padding: 12px 20px; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--card-border);
   }
-  .modal-content {
-    background: #fff;
-    padding: 24px;
-    border-radius: var(--radius);
-    max-width: 400px;
-    width: 90%;
-    text-align: center;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  #log {
+    height: 350px; overflow-y: auto; padding: 20px;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.85rem; color: #cbd5e1; line-height: 1.6;
+    background: rgba(15, 23, 42, 0.8);
+    scrollbar-width: thin; scrollbar-color: var(--card-border) transparent;
+    white-space: pre-wrap; word-wrap: break-word;
   }
-  .modal-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 8px; }
-  .modal-message { color: var(--muted); font-size: 0.95rem; }
-  .modal-spinner {
-    width: 40px; height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid var(--primary);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 16px auto;
+  #log::-webkit-scrollbar { width: 6px; }
+  #log::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 3px; }
+
+  /* Modals */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; z-index: 100;
   }
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+  .modal {
+    background: var(--bg); border: 1px solid var(--card-border); border-radius: var(--radius-lg);
+    padding: 32px; width: 90%; max-width: 400px; text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
   }
+  .spinner {
+    width: 48px; height: 48px; border: 4px solid rgba(59, 130, 246, 0.1);
+    border-top-color: var(--primary); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Utils */
+  .checkbox-label {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem;
+    cursor: pointer; color: var(--muted); transition: color 0.2s;
+  }
+  .checkbox-label:hover { color: #fff; }
+  input[type="checkbox"] { accent-color: var(--primary); width: 16px; height: 16px; }
 </style>
 </head>
 <body>
-<div id="modal-overlay" class="modal-overlay">
-  <div class="modal-content">
-    <div id="modal-spinner" class="modal-spinner"></div>
-    <div id="modal-title" class="modal-title">Please Wait</div>
-    <div id="modal-message" class="modal-message">Processing your request...</div>
+
+<div id="overlay" class="overlay">
+  <div class="modal">
+    <div class="spinner"></div>
+    <h3 id="modal-title" style="margin-bottom:8px">Processing</h3>
+    <p id="modal-msg" style="color:var(--muted); font-size:0.9rem">Please wait while we fetch the latest data...</p>
   </div>
 </div>
 
-<h1>PaperRouter</h1>
-<p class="subtitle">A robust multi-source newspaper downloader and OCR suite</p>
+<header>
+  <h1>PaperRouter</h1>
+  <p class="subtitle">Historical Newspaper Archive & OCR Suite</p>
+</header>
 
-<!-- Newspaper Selection -->
-<div class="card">
-  <h2>Newspaper Selection</h2>
-  <div class="row" style="margin-bottom:10px">
-    <div>
-      <label for="lccn">LCCN</label>
-      <input type="text" id="lccn" value="sn87080287" placeholder="e.g. sn87080287">
+<div class="grid">
+  <!-- Search & Identity -->
+  <div class="card">
+    <h2>Identity</h2>
+    <div class="field-row">
+      <div>
+        <label for="lccn">LCCN (Control Number)</label>
+        <input type="text" id="lccn" value="sn87080287" placeholder="sn87080287">
+      </div>
+      <button class="btn-secondary" onclick="lookupLCCN()" style="height:41px">Lookup</button>
     </div>
-    <div class="narrow">
-      <button class="btn-secondary" onclick="lookupLCCN()">Look Up</button>
+    
+    <div class="field-row">
+      <div>
+        <label for="search-input">Search Title</label>
+        <input type="text" id="search-input" placeholder="e.g. New York Tribune" 
+               onkeydown="if(event.key==='Enter')searchNewspapers()">
+      </div>
+      <button class="btn-secondary" onclick="searchNewspapers()" style="height:41px">Search</button>
+    </div>
+
+    <div id="search-results"></div>
+
+    <div id="selection-preview" style="display:none" class="preview-box">
+      <!-- Thumbnail & Info injected here -->
     </div>
   </div>
-  <div class="row" style="margin-bottom:10px">
-    <div>
-      <label for="search-input">Search newspapers</label>
-      <input type="text" id="search-input" placeholder="Search by title..." onkeydown="if(event.key==='Enter')searchNewspapers()">
-    </div>
-    <div class="narrow">
-      <button class="btn-secondary" onclick="searchNewspapers()">Search</button>
-    </div>
-  </div>
-  <div id="search-results"></div>
-  <div id="info-display" style="font-size:0.85rem;color:var(--muted);margin-top:6px"></div>
-</div>
 
-<!-- Download Options -->
-<div class="card">
-  <h2>Download Options</h2>
-  <div class="row" style="margin-bottom:10px">
-    <div style="flex: 2">
-      <label for="output">Output folder</label>
-      <div class="row" style="gap:5px">
+  <!-- Configuration -->
+  <div class="card">
+    <h2>Configuration</h2>
+    <div class="field-row">
+      <div>
+        <label for="output">Output Directory</label>
         <input type="text" id="output" value="downloads">
-        <button class="btn-secondary narrow" onclick="browseFolder()">Browse</button>
+      </div>
+      <button class="btn-secondary" onclick="browseFolder()" style="height:41px">Browse</button>
+    </div>
+
+    <div class="field-row" style="margin-bottom: 20px;">
+      <div>
+        <label for="years">Years (e.g. 1900-1905)</label>
+        <input type="text" id="years" placeholder="All available">
+      </div>
+      <div>
+        <label for="max-issues">Max Issues</label>
+        <input type="number" id="max-issues" placeholder="Unlimited" min="1">
       </div>
     </div>
-    <div>
-      <label for="source">Source</label>
-      <select id="source"><option value="loc">Library of Congress</option></select>
-    </div>
-  </div>
-  <div class="row" style="margin-bottom:8px">
-    <div>
-      <label>Years <span id="available-years" style="font-weight:normal;color:var(--primary);margin-left:10px"></span></label>
-      <div class="radio-group">
-        <label><input type="radio" name="year-mode" value="all" checked onchange="toggleYears()"> All available</label>
-        <label><input type="radio" name="year-mode" value="custom" onchange="toggleYears()"> Custom:</label>
-        <input type="text" id="years" placeholder="1900-1905" style="width:140px;flex:none" disabled>
+
+    <div class="option-group">
+      <label>OCR Engine</label>
+      <div class="toggle-row" id="ocr-group">
+        <div class="chip active" data-value="none">None</div>
+        <div class="chip" data-value="loc">LOC (Fast)</div>
+        <div class="chip" data-value="surya">Surya (AI)</div>
+        <div class="chip" data-value="both">Both</div>
       </div>
     </div>
-  </div>
-  <div style="margin-bottom:8px">
-    <label>Speed</label>
-    <div class="radio-group">
-      <label><input type="radio" name="speed" value="safe" checked> Safe (15s)</label>
-      <label><input type="radio" name="speed" value="standard"> Standard (4s)</label>
+
+    <div class="option-group">
+      <label>Speed Profile</label>
+      <div class="toggle-row" id="speed-group">
+        <div class="chip active" data-value="safe">Safe (15s)</div>
+        <div class="chip" data-value="standard">Standard (4s)</div>
+      </div>
+    </div>
+
+    <div class="field-row compact" style="gap:20px; margin-top:10px">
+      <label class="checkbox-label"><input type="checkbox" id="verbose"> Verbose Log</label>
+      <label class="checkbox-label"><input type="checkbox" id="retry-failed"> Retry Failed</label>
     </div>
   </div>
-  <div style="margin-bottom:8px">
-    <label>OCR</label>
-    <div class="radio-group">
-      <label><input type="radio" name="ocr" value="none" checked> None</label>
-      <label><input type="radio" name="ocr" value="loc"> LOC (Fast)</label>
-      <label><input type="radio" name="ocr" value="surya"> Surya (AI)</label>
-      <label><input type="radio" name="ocr" value="both"> Both</label>
+</div>
+
+<!-- Controls -->
+<div class="card" style="margin-bottom:32px">
+  <div style="display:flex; justify-content:space-between; align-items:center">
+    <div style="display:flex; gap:12px">
+      <button id="btn-start" class="btn-primary" onclick="startDownload()" style="min-width:140px">
+        Start Download
+      </button>
+      <button id="btn-stop" class="btn-danger" onclick="stopDownload()" disabled>Stop</button>
+    </div>
+    <div style="display:flex; gap:12px">
+      <button id="btn-ocr-batch" class="btn-secondary" onclick="startOCRBatch()">Retroactive OCR</button>
+      <button class="btn-secondary" onclick="clearLog()">Clear Log</button>
     </div>
   </div>
-  <div class="check-group">
-    <label><input type="checkbox" id="verbose"> Verbose</label>
-    <label><input type="checkbox" id="retry-failed"> Retry failed</label>
+
+  <div class="progress-section">
+    <div class="progress-header">
+      <div class="progress-stats" id="progress-stats">Ready to start</div>
+      <div class="progress-status" id="status-bar">Connection idle</div>
+    </div>
+    <div class="progress-container">
+      <div id="progress-fill" class="progress-bar"></div>
+    </div>
   </div>
 </div>
 
-<!-- Actions -->
-<div class="card">
-  <div class="actions">
-    <button id="btn-start" class="btn-primary" onclick="startDownload()">Start Download</button>
-    <button id="btn-stop" class="btn-danger" onclick="stopDownload()" disabled>Stop</button>
-    <button class="btn-secondary" onclick="clearLog()">Clear Log</button>
-    <div class="spacer"></div>
-    <button id="btn-ocr-batch" class="btn-secondary" onclick="startOCRBatch()">OCR Batch</button>
+<div class="card log-card">
+  <div class="log-header">
+    <h2 style="margin:0">Process Console</h2>
+    <div style="font-size:0.75rem; color:var(--muted)">Streamed from downloader.py</div>
   </div>
-</div>
-
-<!-- Progress -->
-<div class="progress-wrap">
-  <div class="progress-bar-bg"><div id="progress-fill" class="progress-bar-fill"></div></div>
-  <div id="progress-text" class="progress-text"></div>
-</div>
-
-<!-- Log -->
-<div class="card" style="padding:0;overflow:hidden">
   <div id="log"></div>
 </div>
-
-<div id="status-bar" class="status-bar">Ready</div>
 
 <script>
 const $ = id => document.getElementById(id);
 const val = id => $(id).value.trim();
-const radio = name => document.querySelector(`input[name="${name}"]:checked`)?.value;
 
-function showModal(title, message) {
-  $('modal-title').textContent = title;
-  $('modal-message').textContent = message;
-  $('modal-overlay').style.display = 'flex';
+// Chip Logic
+document.querySelectorAll('.toggle-row .chip').forEach(chip => {
+  chip.onclick = function() {
+    this.parentElement.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    this.classList.add('active');
+  };
+});
+
+function getActiveChip(groupId) {
+  return $(groupId).querySelector('.chip.active').dataset.value;
 }
 
-function hideModal() {
-  $('modal-overlay').style.display = 'none';
+function showOverlay(title, msg) {
+  $('modal-title').textContent = title;
+  $('modal-msg').textContent = msg;
+  $('overlay').style.display = 'flex';
+}
+
+function hideOverlay() {
+  $('overlay').style.display = 'none';
 }
 
 let eventSource = null;
-
-function getOptions() {
-  return {
-    lccn: val('lccn'),
-    source: val('source'),
-    output: val('output'),
-    speed: radio('speed'),
-    ocr: radio('ocr'),
-    years: radio('year-mode') === 'custom' ? val('years') : '',
-    verbose: $('verbose').checked,
-    retry_failed: $('retry-failed').checked,
-  };
-}
 
 function setRunning(running) {
   $('btn-start').disabled = running;
   $('btn-stop').disabled = !running;
   $('btn-ocr-batch').disabled = running;
-  $('status-bar').textContent = running ? 'Downloading...' : 'Ready';
+  $('status-bar').textContent = running ? 'Process active' : 'Process idle';
   if (running) {
-    $('progress-fill').className = 'progress-bar-fill indeterminate';
-    $('progress-fill').style.width = '30%';
-    $('progress-text').textContent = 'Connecting...';
+    $('progress-fill').classList.add('indeterminate');
+    $('progress-stats').textContent = 'Initialising...';
+  } else {
+    $('progress-fill').classList.remove('indeterminate');
   }
 }
 
 function updateProgress(current, total) {
   const pct = total > 0 ? Math.round((current / total) * 100) : 0;
-  $('progress-fill').className = 'progress-bar-fill';
+  $('progress-fill').classList.remove('indeterminate');
   $('progress-fill').style.width = pct + '%';
-  $('progress-text').textContent = `Issue ${current} of ${total}`;
+  $('progress-stats').textContent = total > 0 ? `Processing ${current} of ${total}` : 'No issues found';
 }
 
 function appendLog(text) {
   const log = $('log');
+  const needsScroll = log.scrollTop + log.offsetHeight >= log.scrollHeight - 20;
   log.textContent += text;
-  log.scrollTop = log.scrollHeight;
+  if (needsScroll) log.scrollTop = log.scrollHeight;
 }
 
-function clearLog() {
-  $('log').textContent = '';
-}
+function clearLog() { $('log').textContent = ''; }
 
 function connectSSE() {
   if (eventSource) eventSource.close();
@@ -712,99 +794,89 @@ function connectSSE() {
     const data = JSON.parse(e.data);
     setRunning(false);
     if (data.status === 'success') {
-      if (data.progress.total === 0) {
-        $('progress-fill').style.width = '0%';
-        $('progress-text').textContent = 'No matching issues found';
-        $('status-bar').textContent = 'Discovery complete - 0 issues found';
-      } else {
-        $('progress-fill').style.width = '100%';
-        $('progress-text').textContent = 'Complete';
-        $('status-bar').textContent = 'Download complete';
-      }
-    } else if (data.status === 'stopped') {
-      $('progress-text').textContent = 'Stopped';
-      $('status-bar').textContent = 'Stopped';
+      updateProgress(data.progress.total, data.progress.total);
+      $('progress-stats').textContent = data.progress.total > 0 ? 'Download complete' : 'Discovery finished';
     } else {
-      $('progress-text').textContent = 'Error';
-      $('status-bar').textContent = 'Error occurred';
+      $('progress-stats').textContent = data.status === 'stopped' ? 'Process stopped' : 'Process error';
     }
   });
 
   eventSource.onerror = () => {
-    // Reconnect after a brief pause
-    setTimeout(() => {
-      if (eventSource.readyState === EventSource.CLOSED) connectSSE();
-    }, 2000);
+    setTimeout(() => { if (eventSource.readyState === EventSource.CLOSED) connectSSE(); }, 2000);
   };
 }
 
 async function startDownload() {
-  const opts = getOptions();
-  if (!opts.lccn) { alert('Please enter an LCCN.'); return; }
+  const lccn = val('lccn');
+  if (!lccn) { alert('Enter LCCN first'); return; }
   clearLog();
   setRunning(true);
   const resp = await fetch('/api/download/start', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(opts),
+    body: JSON.stringify({
+      lccn,
+      source: 'loc',
+      output: val('output'),
+      speed: getActiveChip('speed-group'),
+      ocr: getActiveChip('ocr-group'),
+      years: val('years'),
+      max_issues: val('max-issues') ? parseInt(val('max-issues'), 10) : null,
+      verbose: $('verbose').checked,
+      retry_failed: $('retry-failed').checked
+    })
   });
-  const result = await resp.json();
-  if (!result.ok) {
-    setRunning(false);
-    alert(result.error || result.message);
-  }
+  const res = await resp.json();
+  if (!res.ok) { setRunning(false); alert(res.error || res.message); }
 }
 
-async function stopDownload() {
-  await fetch('/api/download/stop', {method: 'POST'});
-}
+async function stopDownload() { await fetch('/api/download/stop', {method: 'POST'}); }
 
 async function startOCRBatch() {
-  const opts = getOptions();
-  if (!opts.lccn) { alert('Please enter an LCCN.'); return; }
-  if (opts.ocr === 'none') opts.ocr = 'loc';
-  opts.ocr_batch = true;
+  const lccn = val('lccn');
+  if (!lccn) { alert('Enter LCCN first'); return; }
   clearLog();
   setRunning(true);
-  $('progress-text').textContent = 'Starting OCR Batch...';
   const resp = await fetch('/api/download/start', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(opts),
+    body: JSON.stringify({
+      lccn,
+      source: 'loc',
+      output: val('output'),
+      ocr: getActiveChip('ocr-group') === 'none' ? 'loc' : getActiveChip('ocr-group'),
+      ocr_batch: true
+    })
   });
-  const result = await resp.json();
-  if (!result.ok) {
-    setRunning(false);
-    alert(result.error || result.message);
-  }
+  const res = await resp.json();
+  if (!res.ok) { setRunning(false); alert(res.error || res.message); }
 }
 
 async function searchNewspapers() {
   const query = val('search-input');
   if (!query) return;
   const resultsDiv = $('search-results');
-  resultsDiv.innerHTML = '<div style="padding:10px;color:var(--muted)">Searching...</div>';
+  resultsDiv.innerHTML = '<div style="padding:16px; color:var(--muted)">Searching collection...</div>';
   resultsDiv.style.display = 'block';
-  showModal('Searching', 'Searching newspapers... this may take a few minutes.');
+  showOverlay('Searching Archive', `Consulting the Library of Congress for "${query}"...`);
 
   try {
     const resp = await fetch('/api/search', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({query, source: val('source')}),
+      body: JSON.stringify({query, source: 'loc'}),
     });
     const results = await resp.json();
     if (results.length > 0) {
-      resultsDiv.innerHTML = results.map(r => 
-        `<div class="result-item" onclick="selectResult('${r.lccn}')">
-          ${r.lccn} &mdash; ${r.title} (${r.place || '?'}) ${r.dates || ''}
-         </div>`
-      ).join('');
+      resultsDiv.innerHTML = results.map(r => `
+        <div class="result-item" onclick="selectResult('${r.lccn}')">
+          <div style="font-weight:600; font-size:0.95rem">${r.title}</div>
+          <div style="color:var(--muted); font-size:0.8rem">${r.lccn} &bull; ${r.place} &bull; ${r.dates}</div>
+        </div>
+      `).join('');
     } else {
-      resultsDiv.innerHTML = '<div style="padding:10px;color:var(--muted)">No results found.</div>';
+      resultsDiv.innerHTML = '<div style="padding:16px; color:var(--muted)">No results found.</div>';
     }
   } catch (e) {
-    resultsDiv.innerHTML = '<div style="padding:10px;color:var(--danger)">Search failed.</div>';
-  } finally {
-    hideModal();
-  }
+    resultsDiv.innerHTML = '<div style="padding:16px; color:var(--danger)">Search failed.</div>';
+  } finally { hideOverlay(); }
 }
 
 function selectResult(lccn) {
@@ -817,45 +889,36 @@ async function lookupLCCN() {
   const lccn = val('lccn');
   if (!lccn) return;
   
-  $('search-results').style.display = 'none';
-  $('info-display').textContent = 'Looking up newspaper details...';
-  const btn = document.querySelectorAll('.btn-secondary')[0];
-  const oldText = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = '...';
-  showModal('Looking Up', 'Looking up newspaper details... this may take a few minutes.');
+  const preview = $('selection-preview');
+  preview.innerHTML = '<div style="padding:10px; color:var(--muted)">Loading metadata...</div>';
+  preview.style.display = 'flex';
+  showOverlay('Resolving LCCN', `Fetching details for ${lccn}...`);
 
   try {
     const resp = await fetch('/api/lookup', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({lccn, source: val('source')}),
+      body: JSON.stringify({lccn, source: 'loc'}),
     });
     const info = await resp.json();
     if (info && info.title) {
-      $('info-display').innerHTML =
-        `<strong>${info.title}</strong> (${info.lccn})`;
-      if (info.start_year && info.end_year) {
-        $('available-years').textContent = `(Available: ${info.start_year}-${info.end_year})`;
-      } else {
-        $('available-years').textContent = '';
-      }
-      
-      // Suggest output folder name
+      let thumbHtml = info.thumbnail ? `<img src="${info.thumbnail}" class="preview-thumb">` : `<div class="preview-thumb"></div>`;
+      preview.innerHTML = `
+        ${thumbHtml}
+        <div class="preview-info">
+          <h3>${info.title}</h3>
+          <p>${info.lccn} &bull; ${info.start_year || '?'}-${info.end_year || '?'}</p>
+        </div>
+      `;
       const safeTitle = info.title.replace(/[<>:"/\\|?*]/g, '').trim();
-      if (safeTitle && ($('output').value === 'downloads' || $('output').value.startsWith('downloads/'))) {
-          $('output').value = `downloads/${safeTitle}`;
+      if ($('output').value === 'downloads' || $('output').value.startsWith('downloads/')) {
+        $('output').value = `downloads/${safeTitle}`;
       }
     } else {
-      $('info-display').textContent = 'No newspaper found for that LCCN.';
-      $('available-years').textContent = '';
+      preview.innerHTML = '<div style="padding:10px; color:var(--danger)">Newspaper not found.</div>';
     }
   } catch (e) {
-    $('info-display').textContent = 'Lookup failed.';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = oldText;
-    hideModal();
-  }
+    preview.innerHTML = '<div style="padding:10px; color:var(--danger)">Lookup failed.</div>';
+  } finally { hideOverlay(); }
 }
 
 async function browseFolder() {

@@ -19,6 +19,8 @@ import shutil
 import argparse
 import logging
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Semaphore
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
@@ -33,6 +35,17 @@ except ImportError:
     print("ERROR: The 'requests' library is required.")
     print("Please install it by running: pip install requests")
     sys.exit(1)
+
+try:
+    from rich.console import Console
+    from rich.table import Table
+    from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+    from rich.panel import Panel
+    from rich.logging import RichHandler
+    RICH_AVAILABLE = True
+    console = Console()
+except ImportError:
+    RICH_AVAILABLE = False
 
 
 # Configuration
@@ -96,23 +109,8 @@ def search_newspapers(query: str, source_name: str = 'loc') -> List[TitleResult]
 
 def get_newspaper_info(lccn: str, source: NewspaperSource) -> Optional[Dict]:
     """Fetch metadata about a newspaper by its LCCN using the source abstraction."""
-    issues = source.fetch_issues(lccn)
-    if not issues:
-        return None
-
-    title = issues[0].title if issues[0].title else "Unknown"
-
-    start_year = min(i.year for i in issues) if issues else None
-    end_year = max(i.year for i in issues) if issues else None
-
-    return {
-        'lccn': lccn,
-        'title': title,
-        'place': 'Unknown',
-        'start_year': start_year,
-        'end_year': end_year,
-        'url': issues[0].url if issues else "",
-    }
+    # Use the optimized direct metadata lookup if available
+    return source.get_details(lccn)
 
 
 # ---------------------------------------------------------------------------
@@ -153,6 +151,10 @@ class DownloadManager:
         self.max_issues = max_issues
         self.ocr_manager = OCRManager(self.output_dir, self.logger)
 
+        # Rate limiter for downloads: 1 per [download_delay] seconds
+        self._download_semaphore = Semaphore(1)
+        self._last_download_time = 0
+
         self.newspaper_title = self.metadata.get('newspaper_title', lccn)
 
         self.stats = {
@@ -167,14 +169,17 @@ class DownloadManager:
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
         self.logger.handlers.clear()
 
-        log_format = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        log_format = logging.Formatter('%(message)s') if RICH_AVAILABLE else logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
         file_handler = logging.FileHandler(self.output_dir / 'download.log')
         file_handler.setFormatter(log_format)
         self.logger.addHandler(file_handler)
 
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setFormatter(log_format)
+        if RICH_AVAILABLE:
+            console_handler = RichHandler(console=console, show_time=True, show_path=False)
+        else:
+            console_handler = logging.StreamHandler(sys.stdout)
+            console_handler.setFormatter(log_format)
         self.logger.addHandler(console_handler)
 
     def _load_metadata(self) -> Dict:
@@ -224,9 +229,26 @@ class DownloadManager:
         self.logger.info(f"Will process {len(issues)} issues...")
 
         start_time = time.time()
+        
+        issue_progress = None
+        issue_task = None
+        if RICH_AVAILABLE:
+            issue_progress = Progress(
+                SpinnerColumn(),
+                TextColumn("[bold magenta]{task.description}"),
+                BarColumn(),
+                TaskProgressColumn(),
+                console=console
+            )
+            issue_task = issue_progress.add_task("[bold magenta]Overall Progress", total=len(issues))
+            issue_progress.start()
+
         for i, issue in enumerate(issues, 1):
             issue_id = f"{issue.date}_ed-{issue.edition}"
-            self.logger.info(f"\n[{i}/{len(issues)}] Processing {issue_id}")
+            if not issue_progress:
+                self.logger.info(f"\n[{i}/{len(issues)}] Processing {issue_id}")
+            else:
+                self.logger.info(f"Processing {issue_id}")
 
             if issue_id in self.metadata['downloaded'] and not self.retry_failed:
                 if self.ocr_mode == 'none':
@@ -242,34 +264,84 @@ class DownloadManager:
 
             success_count = 0
             downloaded_pages_meta = []
-            for page in pages:
+            
+            def process_page_task(page):
                 filename = f"{issue.lccn}_{page.issue_date}_ed-{page.edition}_page{page.page_num:02d}.pdf"
                 year_dir = self.output_dir / str(issue.year)
                 dest_path = year_dir / filename
 
                 download_ok = True
                 if not dest_path.exists() or self.retry_failed:
+                    # Enforce global rate limit across threads
+                    with self._download_semaphore:
+                        now = time.time()
+                        sleep_time = max(0, self.download_delay - (now - self._last_download_time))
+                        self._last_download_time = now + sleep_time
+                        
+                    if sleep_time > 0:
+                        time.sleep(sleep_time)
+                        
                     res = self.source.download_page_pdf(page, dest_path)
+
                     if res.success:
                         self.stats['downloaded'] += 1
                         self.stats['total_bytes'] += res.size_bytes
-                        self._rate_limit()
                     else:
                         self.logger.error(f"  Failed page {page.page_num}: {res.error}")
                         download_ok = False
                 
                 if download_ok:
-                    success_count += 1
-                    downloaded_pages_meta.append({
-                        'page': page.page_num,
-                        'file': str(dest_path.relative_to(self.output_dir)),
-                        'size': dest_path.stat().st_size if dest_path.exists() else 0
-                    })
-                    
-                    if self.ocr_mode != 'none':
-                        self.ocr_manager.process_page(page, self.source, self.ocr_mode, pdf_path=dest_path)
+                    return {
+                        'page': page,
+                        'file_meta': {
+                            'page': page.page_num,
+                            'file': str(dest_path.relative_to(self.output_dir)),
+                            'size': dest_path.stat().st_size if dest_path.exists() else 0
+                        },
+                        'path': dest_path
+                    }
+                return None
+
+            download_results = []
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                futures = [executor.submit(process_page_task, page) for page in pages]
+                
+                if RICH_AVAILABLE:
+                    with Progress(
+                        SpinnerColumn(),
+                        TextColumn("[cyan]{task.description}"),
+                        BarColumn(),
+                        TaskProgressColumn(),
+                        console=console,
+                        transient=True
+                    ) as progress:
+                        task = progress.add_task(f"[cyan]Downloading {issue_id} pages", total=len(pages))
+                        for future in as_completed(futures):
+                            res = future.result()
+                            if res:
+                                download_results.append(res)
+                            progress.advance(task)
+                else:
+                    for future in as_completed(futures):
+                        res = future.result()
+                        if res:
+                            download_results.append(res)
+
+            # Sort results to keep page order for metadata
+            download_results.sort(key=lambda x: x['page'].page_num)
+            downloaded_pages_meta = [r['file_meta'] for r in download_results]
+            success_count = len(download_results)
 
             if success_count == len(pages):
+                # Now trigger batched OCR for the whole issue
+                if self.ocr_mode != 'none':
+                    self.ocr_manager.process_issue_batch(
+                        pages=[r['page'] for r in download_results],
+                        source=self.source,
+                        mode=self.ocr_mode,
+                        pdf_paths=[r['path'] for r in download_results]
+                    )
+
                 self.metadata['downloaded'][issue_id] = {
                     'date': issue.date,
                     'edition': issue.edition,
@@ -283,6 +355,11 @@ class DownloadManager:
                 self.metadata['failed'][issue_id] = f"Partial: {success_count}/{len(pages)}"
 
             self._save_metadata()
+            if issue_progress:
+                issue_progress.advance(issue_task)
+
+        if issue_progress:
+            issue_progress.stop()
 
         elapsed = time.time() - start_time
         self.logger.info("\n" + "=" * 70)
@@ -379,6 +456,16 @@ def main():
         if args.json:
             import dataclasses
             print(json.dumps([dataclasses.asdict(r) for r in results], ensure_ascii=False))
+        elif RICH_AVAILABLE:
+            table = Table(title=f"Search Results for '{args.search}' ({args.source})")
+            table.add_column("LCCN", style="cyan", no_wrap=True)
+            table.add_column("Title", style="magenta")
+            table.add_column("Location", style="green")
+            table.add_column("Dates", style="yellow")
+            
+            for r in results:
+                table.add_row(r.lccn, r.title, r.place, r.dates)
+            console.print(table)
         else:
             if not results:
                 print("No newspapers found.")
