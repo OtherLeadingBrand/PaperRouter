@@ -11,17 +11,20 @@ The system is built around a **Pluggable Source Architecture**. This decouples t
 ```text
 /
 ├── downloader.py          # CLI entry point and DownloadManager orchestration
-├── web_gui.py             # Flask-based web interface (primary GUI)
+├── web_gui.py             # Flask-based web interface (primary GUI, dark-themed)
 ├── gui.py                 # Legacy Tkinter-based interface (deprecated)
 ├── ocr_engine.py          # Tier 1 & 2 OCR management (SuryaOCREngine, OCRManager)
 ├── harness.py             # Resource-monitored process wrapper for AI workers
 ├── run.bat                # Windows CLI launcher
 ├── run_gui.bat            # Windows Web GUI launcher (auto-installs deps)
-├── requirements.txt       # Python dependencies
+├── requirements.txt       # Python dependencies (requests, flask, psutil)
+├── VERSION                # SemVer version string (e.g. 0.1.0-alpha)
 ├── sources/
 │   ├── __init__.py        # Source registry & get_source() factory
 │   ├── base.py            # Abstract base classes and dataclass schemas
 │   └── loc_source.py      # Library of Congress (Chronicling America) implementation
+├── docs/
+│   └── screenshots/       # README screenshots (auto-generated)
 ├── tests/
 │   ├── debug_loc.py       # LOC API debugging utilities
 │   ├── check_surya_imports.py
@@ -47,7 +50,7 @@ CLI (downloader.py)          Web GUI (web_gui.py)
                └── SuryaOCREngine            [Tier 2]
 ```
 
-The Web GUI does not import `DownloadManager` directly. It spawns `downloader.py` (or `harness.py`) as a subprocess and parses its stdout to stream progress events to the browser.
+The Web GUI does not import `DownloadManager` directly. It spawns `downloader.py` (or `harness.py`) as a subprocess and parses its stdout to stream progress events to the browser via Server-Sent Events (SSE). The web server uses dynamic port selection, trying ports 5000, 5001, 8080, and others in sequence.
 
 ---
 

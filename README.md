@@ -57,6 +57,8 @@ You should see something like `Python 3.12.0`.
 pip install -r requirements.txt
 ```
 
+This installs `requests`, `flask`, and `psutil`.
+
 **With AI OCR** (local text extraction using Surya — see [OCR Options Explained](#ocr-options-explained)):
 ```bash
 pip install -r requirements.txt surya-ocr pymupdf torch Pillow
@@ -76,16 +78,22 @@ The web interface is the recommended way to use PaperRouter, especially if you p
 python web_gui.py
 ```
 
-Or on Windows, double-click **`run_gui.bat`**. Your browser will open to `http://localhost:5000`.
+Or on Windows, double-click **`run_gui.bat`**. Your default browser will open automatically. The server picks the first available port (starting from 5000) — the actual URL is printed in the terminal.
 
 ### Step 2: Find your newspaper
 
 Every newspaper in the archive has a unique identifier called an **LCCN** (Library of Congress Control Number), such as `sn87080287`.
 
-- **If you know the LCCN:** Type it in the LCCN box and click **Look Up**.
-- **If you don't know it:** Type a name in the Search box (e.g. "Freeland Tribune") and click **Search**. Click a result to select it.
+The left-hand **Identity** card is where you find and select your newspaper:
 
-![Searching for a newspaper by title](docs/screenshots/02_search_results.png)
+- **If you know the LCCN:** Type it in the LCCN field and click **Lookup**.
+- **If you don't know it:** Type a name in the **Search Title** field (e.g. "Freeland Tribune") and click **Search**. Click a result to select it.
+
+![Searching for a newspaper and viewing results](docs/screenshots/02_search_results.png)
+
+Once a newspaper is found, a **preview card** appears below the search fields showing the title, LCCN, date range, and a thumbnail of the first page (when available).
+
+![Newspaper selected with preview card](docs/screenshots/03_newspaper_selected.png)
 
 Here are some example LCCNs to try:
 
@@ -99,27 +107,33 @@ You can also browse the full collection at https://chroniclingamerica.loc.gov/.
 
 ### Step 3: Choose your options
 
-![Download options configured with year filter and OCR](docs/screenshots/04_download_options.png)
+The right-hand **Configuration** card controls how downloads work:
+
+![Configuration card with years, max issues, and OCR options](docs/screenshots/04_download_options.png)
 
 | Option | What it does |
 |---|---|
-| **Output Folder** | Where files get saved. Defaults to `downloads/`. |
-| **Years** | Leave on "All available" to get everything, or select "Custom" and enter a range like `1900-1905` or `1900,1903,1910-1915`. |
-| **Speed** | "Safe" (15-second delay) is recommended. See [Rate Limiting](#rate-limiting). |
-| **OCR** | Text extraction mode. Leave on "None" for PDFs only. See [OCR Options Explained](#ocr-options-explained). |
+| **Output Directory** | Where files get saved. Defaults to `downloads/`. Auto-updates to include the newspaper title after a lookup. |
+| **Years** | Leave blank for all available years, or enter a range like `1900-1905` or `1900,1903,1910-1915`. |
+| **Max Issues** | Limit how many issues to download. Leave blank for unlimited. Useful for testing with a small batch first. |
+| **OCR Engine** | Text extraction mode. Select a chip: **None**, **LOC (Fast)**, **Surya (AI)**, or **Both**. See [OCR Options Explained](#ocr-options-explained). |
+| **Speed Profile** | **Safe (15s)** is recommended. See [Rate Limiting](#rate-limiting). |
+| **Verbose Log** | Show detailed debug output in the process console. |
+| **Retry Failed** | Re-attempt pages that failed on a previous run. |
 
 ### Step 4: Download
 
-Click **Start Download** and watch the progress bar and log output.
+Click **Start Download** and watch the progress bar and process console.
 
-![Download in progress showing log output](docs/screenshots/05_download_progress.png)
+![Download in progress showing progress bar and log output](docs/screenshots/05_download_progress.png)
 
-- Downloads are intentionally paced (15-second delay) to respect the Library of Congress servers.
+- Downloads are intentionally paced (15-second delay on Safe) to respect the Library of Congress servers.
 - Click **Stop** at any time. Your progress is saved automatically, and you can resume later by clicking Start Download again — already-downloaded pages are skipped.
+- The **Retroactive OCR** button runs OCR on files you have already downloaded, without re-downloading them (see [Retroactive OCR](#retroactive-ocr-batch-mode)).
 
 ### Step 5: Find your files
 
-Open the output folder (default: `downloads/`). Inside you'll find folders organized by LCCN and year:
+Open the output folder (default: `downloads/`). Inside you'll find folders organized by newspaper title and year:
 
 ```
 downloads/Freeland tribune./
@@ -220,7 +234,7 @@ The **Library of Congress** has already run OCR on most pages in the Chronicling
 - **Quality:** Varies. The LOC processed these pages in bulk, so some are excellent and others are garbled, especially on older or damaged pages.
 - **Requirements:** None beyond the base install.
 - **Output files:** `*_loc.txt` alongside each PDF.
-- **GUI option:** Select **LOC (Fast)** under OCR.
+- **GUI option:** Select the **LOC (Fast)** chip under OCR Engine.
 - **CLI flag:** `--ocr loc`
 
 ### Surya OCR (slow, higher quality, runs locally)
@@ -229,17 +243,17 @@ The **Library of Congress** has already run OCR on most pages in the Chronicling
 
 - **Speed:** Slow — each page requires AI inference. Expect minutes per page depending on your hardware.
 - **Quality:** Generally higher than LOC, particularly on challenging scans.
-- **Requirements:** Extra packages: `pip install surya-ocr pymupdf torch`. A modern GPU helps but is not required (CPU mode is much slower).
+- **Requirements:** Extra packages: `pip install surya-ocr pymupdf torch Pillow`. A modern GPU helps but is not required (CPU mode is much slower).
 - **Resource usage:** Surya loads large AI models into memory. PaperRouter includes a [memory-protection harness](#memory-protected-ai-ocr-harness) that monitors RAM usage and terminates the process if your system runs low.
 - **Output files:** `*_surya.txt` alongside each PDF.
-- **GUI option:** Select **Surya (AI)** under OCR.
+- **GUI option:** Select the **Surya (AI)** chip under OCR Engine.
 - **CLI flag:** `--ocr surya`
 
 ### Both
 
 Runs LOC first, then Surya. You get two text files per page (`_loc.txt` and `_surya.txt`) so you can compare quality.
 
-- **GUI option:** Select **Both** under OCR.
+- **GUI option:** Select the **Both** chip under OCR Engine.
 - **CLI flag:** `--ocr both`
 
 ### None (default)
@@ -248,9 +262,9 @@ Downloads PDF page scans only, with no text extraction.
 
 ### Retroactive OCR (batch mode)
 
-Already downloaded a newspaper but want to add text extraction later? Use **OCR Batch** mode:
+Already downloaded a newspaper but want to add text extraction later? Use batch mode:
 
-- **GUI:** Select an OCR mode, then click the **OCR Batch** button.
+- **GUI:** Select an OCR engine chip, then click the **Retroactive OCR** button.
 - **CLI:** `python downloader.py --lccn sn87080287 --ocr loc --ocr-batch`
 
 This scans your existing download folder and runs OCR on every page that doesn't already have a text file.
@@ -277,7 +291,7 @@ downloads/sn87080287/
 
 ### Resume behavior
 
-The `download_metadata.json` file tracks every successfully downloaded issue. If you stop and restart, previously completed issues are automatically skipped. Use `--retry-failed` (or check "Retry failed" in the GUI) to re-attempt issues that had errors.
+The `download_metadata.json` file tracks every successfully downloaded issue. If you stop and restart, previously completed issues are automatically skipped. Use `--retry-failed` (or check "Retry Failed" in the GUI) to re-attempt issues that had errors.
 
 ---
 
@@ -358,13 +372,13 @@ Yes. PaperRouter saves your progress automatically. Run the same command again (
 <details>
 <summary><strong>Some pages failed. What do I do?</strong></summary>
 
-Run the download again with "Retry failed" checked in the GUI, or add `--retry-failed` on the command line. PaperRouter remembers which pages had errors and will try those again.
+Run the download again with "Retry Failed" checked in the GUI, or add `--retry-failed` on the command line. PaperRouter remembers which pages had errors and will try those again.
 </details>
 
 <details>
 <summary><strong>I got blocked / "429 Too Many Requests"</strong></summary>
 
-PaperRouter handles this automatically with retries and backoff. If it keeps happening, wait a few minutes and try again. Make sure you are using "Safe" speed.
+PaperRouter handles this automatically with retries and backoff. If it keeps happening, wait a few minutes and try again. Make sure you are using the "Safe" speed profile.
 </details>
 
 <details>
@@ -400,21 +414,21 @@ Python isn't installed, or wasn't added to PATH. Reinstall Python and make sure 
 <details>
 <summary><strong>"No module named 'requests'"</strong></summary>
 
-Open a terminal and run `pip install requests`. Or use `run.bat` / `run_gui.bat` — they install it for you.
+Open a terminal and run `pip install -r requirements.txt`. Or use `run.bat` / `run_gui.bat` — they install dependencies for you.
 </details>
 
 <details>
 <summary><strong>The web interface doesn't open in the browser</strong></summary>
 
-1. Make sure no other application is using port 5000.
-2. Try running `python web_gui.py` from a terminal to see error messages.
+1. Try running `python web_gui.py` from a terminal to see error messages and the URL it binds to.
+2. The server tries ports 5000, 5001, 8080, and others in sequence — check the terminal output for the actual URL.
 3. Make sure Flask is installed: `pip install flask`
 </details>
 
 <details>
 <summary><strong>"Failed to import Surya" when using AI OCR</strong></summary>
 
-Install the extra dependencies: `pip install surya-ocr pymupdf torch`. Surya requires a modern GPU for best performance but will run (slowly) on CPU.
+Install the extra dependencies: `pip install surya-ocr pymupdf torch Pillow`. Surya requires a modern GPU for best performance but will run (slowly) on CPU.
 </details>
 
 <details>
@@ -435,7 +449,7 @@ Surya uses a lot of memory. The harness is supposed to prevent this, but if it h
 | `run.bat` | CLI launcher. Checks for Python and dependencies, then passes arguments to `downloader.py`. |
 | `run_gui.bat` | Web GUI launcher. Double-click to open the interface in your browser. |
 
-Both scripts auto-install the `requests` library if missing.
+Both scripts auto-install required dependencies (`requests`, `flask`, `psutil`) if missing.
 
 ---
 
