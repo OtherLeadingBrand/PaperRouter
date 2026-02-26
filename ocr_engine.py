@@ -140,13 +140,30 @@ class OCRManager:
     def process_page(self, page: PageMetadata, source: NewspaperSource, mode: str, pdf_path: Optional[Path] = None):
         """Process a page using the selected OCR mode."""
         year_dir = self.output_dir / str(page.issue_date[:4])
-        
+
         if mode in ('loc', 'both'):
             res = source.fetch_ocr_text(page, year_dir)
             if res.success:
                 self.logger.info(f"  Tier 1 OCR (Source): Success, {res.word_count} words")
             else:
                 self.logger.warning(f"  Tier 1 OCR (Source): Failed: {res.error}")
+
+        if mode in ('surya', 'both'):
+            if not SURYA_AVAILABLE:
+                self.logger.error(f"  Tier 2 OCR (Surya): Unavailable - surya-ocr not installed")
+                return
+
+            if not self.surya_engine:
+                self.surya_engine = SuryaOCREngine(self.logger)
+
+            if pdf_path and pdf_path.exists():
+                res = self.surya_engine.process_page(page, year_dir, pdf_path)
+                if res.get('success'):
+                    self.logger.info(f"  Tier 2 OCR (Surya): Success, {res['word_count']} words")
+                else:
+                    self.logger.error(f"  Tier 2 OCR (Surya): Failed: {res.get('error')}")
+            else:
+                self.logger.warning(f"  Tier 2 OCR (Surya): Skipped - PDF not found at {pdf_path}")
 
     def process_issue_batch(self, pages: List[PageMetadata], source: NewspaperSource, mode: str, pdf_paths: List[Path]):
         """Process all pages of an issue as a batch where possible."""

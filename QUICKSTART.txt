@@ -41,9 +41,17 @@ This is the recommended way to use the tool if you're not comfortable
 with the command line.
 
 STEP 1: Open the app
-  - Double-click "run_gui.bat" in this folder
-  - Your web browser will open to http://localhost:5000 with the PaperRouter interface.
-  - (First time: it may take a moment to install dependencies like Flask)
+  - Double-click "start.bat" in this folder (RECOMMENDED)
+  - First time: it creates a virtual environment and installs dependencies.
+    This may take a minute.
+  - It also checks for updates automatically. If a newer version is
+    available, you'll see a notice in the terminal and a banner in the GUI.
+  - Your web browser will open automatically with the PaperRouter interface.
+  - The server picks the first available port (starting from 5000). The
+    actual URL is printed in the terminal window (e.g. http://localhost:5000).
+
+  NOTE: "run_gui.bat" still works too, but "start.bat" is preferred because
+  it manages a virtual environment and checks for updates.
 
 STEP 2: Find your newspaper
   - Every newspaper has a unique ID called an "LCCN"
@@ -143,7 +151,7 @@ This tool offers two types of OCR:
   Surya (slow, higher quality)
     Runs an AI model on your own computer to read the text fresh.
     Produces better results, especially on difficult pages.
-    ** Requires extra software: pip install surya-ocr pymupdf torch **
+    ** Requires extra software: pip install surya-ocr pymupdf torch Pillow **
     ** Uses a LOT of memory (RAM). The tool will monitor usage and **
     ** stop if your computer runs low. **
     In the GUI: select "Surya (AI)" under OCR.
@@ -162,8 +170,28 @@ OCR text files are saved alongside the PDFs with "_loc.txt" or "_surya.txt"
 at the end of the filename.
 
 You can also run OCR later on files you've already downloaded:
-  - In the GUI: select your OCR mode, then click the "OCR Batch" button
+  - In the GUI: select your OCR mode, then click the "Retroactive OCR" button
+  - Or use the OCR Manager panel (below the progress bar) to see per-year
+    OCR coverage and selectively process specific years or dates
   - Command line: python downloader.py --lccn sn87080287 --ocr loc --ocr-batch
+  - To overwrite existing OCR: check "Force re-run" in GUI, or --force-ocr
+  - To target one issue: enter a date in the OCR Manager, or --date 1900-05-15
+
+
+================================================================================
+UPDATING PAPERROUTER
+================================================================================
+
+PaperRouter can update itself without needing Git installed.
+
+  - If you use "start.bat", it checks for updates automatically on launch.
+  - In the web interface, a purple banner appears at the top when an update
+    is available. Click "Update Now" to download and install it.
+  - From the command line:
+      python updater.py --check-only     (just check)
+      python updater.py --apply          (download and install)
+  - After updating, restart the application to use the new version.
+  - Your downloads, settings, and virtual environment are preserved.
 
 
 ================================================================================
@@ -228,13 +256,14 @@ Fix:     Double-check the LCCN at https://chroniclingamerica.loc.gov/
          Not all newspapers have been digitized. Try searching by name.
 
 Problem: The interface doesn't open in the browser
-Fix:     1. Ensure no other app is using port 5000.
-         2. Try running "python web_gui.py" from Command Prompt to see errors.
+Fix:     1. Try running "python web_gui.py" from Command Prompt to see errors.
+         2. The server tries ports 5000, 5001, 8080, and others in sequence.
+            Check the terminal output for the actual URL.
          3. Ensure Flask is installed: pip install flask
 
 Problem: "Failed to import Surya" when using AI OCR
 Fix:     Install the extra dependencies:
-           pip install surya-ocr pymupdf torch
+           pip install surya-ocr pymupdf torch Pillow
          Surya requires a modern GPU for best performance but will
          run (slowly) on CPU.
 

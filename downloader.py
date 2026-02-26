@@ -44,8 +44,12 @@ try:
     from rich.logging import RichHandler
     RICH_AVAILABLE = True
     console = Console()
+    # Disable live progress bars when stdout is piped (e.g. from web GUI subprocess).
+    # Rich's spinner/bar characters cause UnicodeEncodeError on Windows cp1252 pipes.
+    RICH_LIVE_OK = sys.stdout.isatty()
 except ImportError:
     RICH_AVAILABLE = False
+    RICH_LIVE_OK = False
 
 
 # Configuration
@@ -125,7 +129,8 @@ class DownloadManager:
                  years: Optional[List[int]] = None,
                  verbose: bool = False, retry_failed: bool = False,
                  speed: str = DEFAULT_SPEED, ocr_mode: str = 'none',
-                 max_issues: int = 0):
+                 max_issues: int = 0, force_ocr: bool = False,
+                 ocr_date: Optional[str] = None):
         self.lccn = lccn
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -149,6 +154,8 @@ class DownloadManager:
         self.session = create_session()
         self.ocr_mode = ocr_mode
         self.max_issues = max_issues
+        self.force_ocr = force_ocr
+        self.ocr_date = ocr_date  # Optional YYYY-MM-DD to target a single issue
         self.ocr_manager = OCRManager(self.output_dir, self.logger)
 
         # Rate limiter for downloads: 1 per [download_delay] seconds
@@ -169,13 +176,13 @@ class DownloadManager:
         self.logger.setLevel(logging.DEBUG if verbose else logging.INFO)
         self.logger.handlers.clear()
 
-        log_format = logging.Formatter('%(message)s') if RICH_AVAILABLE else logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        log_format = logging.Formatter('%(message)s') if RICH_LIVE_OK else logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
         file_handler = logging.FileHandler(self.output_dir / 'download.log')
         file_handler.setFormatter(log_format)
         self.logger.addHandler(file_handler)
 
-        if RICH_AVAILABLE:
+        if RICH_LIVE_OK:
             console_handler = RichHandler(console=console, show_time=True, show_path=False)
         else:
             console_handler = logging.StreamHandler(sys.stdout)
@@ -189,7 +196,7 @@ class DownloadManager:
                     return json.load(f)
             except Exception as e:
                 self.logger.warning(f"Could not load metadata file: {e}")
-        return {'downloaded': {}, 'failed': {}, 'lccn': self.lccn}
+        return {'downloaded': {}, 'failed': {}, 'failed_pages': {}, 'lccn': self.lccn}
 
     def _save_metadata(self):
         try:
@@ -229,137 +236,162 @@ class DownloadManager:
         self.logger.info(f"Will process {len(issues)} issues...")
 
         start_time = time.time()
-        
-        issue_progress = None
-        issue_task = None
-        if RICH_AVAILABLE:
-            issue_progress = Progress(
+
+        # Wrap the entire issue loop in a context manager to avoid overlapping with inner progress displays
+        issue_progress_context = None
+        if RICH_LIVE_OK:
+            issue_progress_context = Progress(
                 SpinnerColumn(),
                 TextColumn("[bold magenta]{task.description}"),
                 BarColumn(),
                 TaskProgressColumn(),
                 console=console
             )
-            issue_task = issue_progress.add_task("[bold magenta]Overall Progress", total=len(issues))
-            issue_progress.start()
 
-        for i, issue in enumerate(issues, 1):
-            issue_id = f"{issue.date}_ed-{issue.edition}"
-            if not issue_progress:
+        # Use a context manager if rich is available, otherwise just iterate normally
+        if issue_progress_context:
+            issue_progress_context.__enter__()
+            issue_task = issue_progress_context.add_task("[bold magenta]Overall Progress", total=len(issues))
+
+        try:
+            for i, issue in enumerate(issues, 1):
+                issue_id = f"{issue.date}_ed-{issue.edition}"
                 self.logger.info(f"\n[{i}/{len(issues)}] Processing {issue_id}")
-            else:
-                self.logger.info(f"Processing {issue_id}")
 
-            if issue_id in self.metadata['downloaded'] and not self.retry_failed:
-                if self.ocr_mode == 'none':
-                    self.logger.info(f"  Skipping (already downloaded)")
-                    self.stats['skipped'] += 1
+                if issue_id in self.metadata['downloaded'] and not self.retry_failed:
+                    if self.ocr_mode == 'none':
+                        self.logger.info(f"  Skipping (already downloaded)")
+                        self.stats['skipped'] += 1
+                        continue
+
+                pages = self.source.get_pages_for_issue(issue)
+                if not pages:
+                    self.logger.error(f"  No pages found.")
+                    self.stats['failed'] += 1
                     continue
+                self.logger.info(f"  Issue has {len(pages)} pages")
 
-            pages = self.source.get_pages_for_issue(issue)
-            if not pages:
-                self.logger.error(f"  No pages found.")
-                self.stats['failed'] += 1
-                continue
+                success_count = 0
+                downloaded_pages_meta = []
+                
+                def process_page_task(page):
+                    filename = f"{issue.lccn}_{page.issue_date}_ed-{page.edition}_page{page.page_num:02d}.pdf"
+                    year_dir = self.output_dir / str(issue.year)
+                    dest_path = year_dir / filename
 
-            success_count = 0
-            downloaded_pages_meta = []
-            
-            def process_page_task(page):
-                filename = f"{issue.lccn}_{page.issue_date}_ed-{page.edition}_page{page.page_num:02d}.pdf"
-                year_dir = self.output_dir / str(issue.year)
-                dest_path = year_dir / filename
+                    # Build a unique page identifier for tracking
+                    page_id = f"{issue_id}_page{page.page_num:02d}"
 
-                download_ok = True
-                if not dest_path.exists() or self.retry_failed:
-                    # Enforce global rate limit across threads
-                    with self._download_semaphore:
-                        now = time.time()
-                        sleep_time = max(0, self.download_delay - (now - self._last_download_time))
-                        self._last_download_time = now + sleep_time
-                        
-                    if sleep_time > 0:
-                        time.sleep(sleep_time)
-                        
-                    res = self.source.download_page_pdf(page, dest_path)
+                    download_ok = True
+                    # Download if file doesn't exist OR if retry_failed is True AND this page previously failed
+                    should_retry = self.retry_failed and page_id in self.metadata.get('failed_pages', {})
+                    if not dest_path.exists() or should_retry:
+                        # Enforce global rate limit across threads
+                        with self._download_semaphore:
+                            now = time.time()
+                            sleep_time = max(0, self.download_delay - (now - self._last_download_time))
+                            self._last_download_time = now + sleep_time
+                            
+                        if sleep_time > 0:
+                            time.sleep(sleep_time)
+                            
+                        res = self.source.download_page_pdf(page, dest_path)
 
-                    if res.success:
-                        self.stats['downloaded'] += 1
-                        self.stats['total_bytes'] += res.size_bytes
+                        if res.success:
+                            self.stats['downloaded'] += 1
+                            self.stats['total_bytes'] += res.size_bytes
+                            # Remove from failed pages if it was previously failed
+                            if page_id in self.metadata.get('failed_pages', {}):
+                                del self.metadata['failed_pages'][page_id]
+                        else:
+                            self.logger.error(f"  Failed page {page.page_num}: {res.error}")
+                            download_ok = False
+                            # Track failed page
+                            if 'failed_pages' not in self.metadata:
+                                self.metadata['failed_pages'] = {}
+                            self.metadata['failed_pages'][page_id] = {
+                                'issue_id': issue_id,
+                                'page_num': page.page_num,
+                                'error': res.error,
+                                'failed_at': datetime.now().isoformat()
+                            }
+
+                    if download_ok:
+                        self.logger.info(f"  [page {page.page_num}/{len(pages)}] done")
+                        return {
+                            'page': page,
+                            'file_meta': {
+                                'page': page.page_num,
+                                'file': str(dest_path.relative_to(self.output_dir)),
+                                'size': dest_path.stat().st_size if dest_path.exists() else 0
+                            },
+                            'path': dest_path
+                        }
+                    return None
+
+                download_results = []
+                with ThreadPoolExecutor(max_workers=4) as executor:
+                    futures = [executor.submit(process_page_task, page) for page in pages]
+                    
+                    # Only open an inner Progress bar if the outer issue-level one is NOT active.
+                    # Rich raises LiveError if two Progress contexts are active simultaneously.
+                    if RICH_LIVE_OK and not issue_progress_context:
+                        with Progress(
+                            SpinnerColumn(),
+                            TextColumn("[cyan]{task.description}"),
+                            BarColumn(),
+                            TaskProgressColumn(),
+                            console=console,
+                            transient=True
+                        ) as progress:
+                            task = progress.add_task(f"[cyan]Downloading {issue_id} pages", total=len(pages))
+                            for future in as_completed(futures):
+                                res = future.result()
+                                if res:
+                                    download_results.append(res)
+                                progress.advance(task)
                     else:
-                        self.logger.error(f"  Failed page {page.page_num}: {res.error}")
-                        download_ok = False
-                
-                if download_ok:
-                    return {
-                        'page': page,
-                        'file_meta': {
-                            'page': page.page_num,
-                            'file': str(dest_path.relative_to(self.output_dir)),
-                            'size': dest_path.stat().st_size if dest_path.exists() else 0
-                        },
-                        'path': dest_path
-                    }
-                return None
-
-            download_results = []
-            with ThreadPoolExecutor(max_workers=4) as executor:
-                futures = [executor.submit(process_page_task, page) for page in pages]
-                
-                if RICH_AVAILABLE:
-                    with Progress(
-                        SpinnerColumn(),
-                        TextColumn("[cyan]{task.description}"),
-                        BarColumn(),
-                        TaskProgressColumn(),
-                        console=console,
-                        transient=True
-                    ) as progress:
-                        task = progress.add_task(f"[cyan]Downloading {issue_id} pages", total=len(pages))
                         for future in as_completed(futures):
                             res = future.result()
                             if res:
                                 download_results.append(res)
-                            progress.advance(task)
+
+
+                # Sort results to keep page order for metadata
+                download_results.sort(key=lambda x: x['page'].page_num)
+                downloaded_pages_meta = [r['file_meta'] for r in download_results]
+                success_count = len(download_results)
+
+                if success_count == len(pages):
+                    # Now trigger batched OCR for the whole issue
+                    if self.ocr_mode != 'none':
+                        self.ocr_manager.process_issue_batch(
+                            pages=[r['page'] for r in download_results],
+                            source=self.source,
+                            mode=self.ocr_mode,
+                            pdf_paths=[r['path'] for r in download_results]
+                        )
+
+                    self.metadata['downloaded'][issue_id] = {
+                        'date': issue.date,
+                        'edition': issue.edition,
+                        'complete': True,
+                        'downloaded_at': datetime.now().isoformat(),
+                        'pages': downloaded_pages_meta
+                    }
+                    if issue_id in self.metadata['failed']:
+                        del self.metadata['failed'][issue_id]
                 else:
-                    for future in as_completed(futures):
-                        res = future.result()
-                        if res:
-                            download_results.append(res)
+                    self.metadata['failed'][issue_id] = f"Partial: {success_count}/{len(pages)}"
 
-            # Sort results to keep page order for metadata
-            download_results.sort(key=lambda x: x['page'].page_num)
-            downloaded_pages_meta = [r['file_meta'] for r in download_results]
-            success_count = len(download_results)
+                self._save_metadata()
+                if issue_progress_context:
+                    issue_progress_context.advance(issue_task)
 
-            if success_count == len(pages):
-                # Now trigger batched OCR for the whole issue
-                if self.ocr_mode != 'none':
-                    self.ocr_manager.process_issue_batch(
-                        pages=[r['page'] for r in download_results],
-                        source=self.source,
-                        mode=self.ocr_mode,
-                        pdf_paths=[r['path'] for r in download_results]
-                    )
 
-                self.metadata['downloaded'][issue_id] = {
-                    'date': issue.date,
-                    'edition': issue.edition,
-                    'complete': True,
-                    'downloaded_at': datetime.now().isoformat(),
-                    'pages': downloaded_pages_meta
-                }
-                if issue_id in self.metadata['failed']:
-                    del self.metadata['failed'][issue_id]
-            else:
-                self.metadata['failed'][issue_id] = f"Partial: {success_count}/{len(pages)}"
-
-            self._save_metadata()
-            if issue_progress:
-                issue_progress.advance(issue_task)
-
-        if issue_progress:
-            issue_progress.stop()
+        finally:
+            if issue_progress_context:
+                issue_progress_context.__exit__(None, None, None)
 
         elapsed = time.time() - start_time
         self.logger.info("\n" + "=" * 70)
@@ -385,18 +417,54 @@ class DownloadManager:
             self.logger.warning("No downloaded issues found in metadata!")
             return
 
+        # Build filtered list of eligible issues for progress tracking
+        eligible = []
         for issue_id, info in downloaded.items():
-            issue_pages = info.get('pages', [])
-            if not issue_pages:
+            issue_year = int(info['date'][:4])
+            if self.year_set and issue_year not in self.year_set:
                 continue
+            if self.ocr_date and info['date'] != self.ocr_date:
+                continue
+            if not info.get('pages'):
+                continue
+            eligible.append((issue_id, info))
 
+        if not eligible:
+            self.logger.warning("No issues match the specified filters.")
+            return
+
+        self.logger.info(f"Will process {len(eligible)} issues...")
+
+        for issue_id, info in eligible:
+            issue_pages = info.get('pages', [])
             issues_count += 1
-            self.logger.info(f"Processing issue {issue_id} ({len(issue_pages)} pages)...")
+            self.logger.info(f"\n[{issues_count}/{len(eligible)}] Processing {issue_id} ({len(issue_pages)} pages)...")
 
             for page_info in issue_pages:
                 page_num = page_info['page']
                 page_file = page_info['file']
                 pdf_path = self.output_dir / page_file
+
+                # Check if OCR text already exists for this page based on mode
+                year_dir = self.output_dir / str(info['date'][:4])
+                base_name = f"{info['date']}_ed-{info['edition']}_page{page_num:02d}"
+                loc_ocr_path = year_dir / f"{base_name}_loc.txt"
+                surya_ocr_path = year_dir / f"{base_name}_surya.txt"
+
+                skip = False
+                if not self.force_ocr:
+                    if self.ocr_mode == 'loc' and loc_ocr_path.exists():
+                        self.logger.debug(f"  Skipping {issue_id} page {page_num} - LOC OCR already exists")
+                        skip = True
+                    elif self.ocr_mode == 'surya' and surya_ocr_path.exists():
+                        self.logger.debug(f"  Skipping {issue_id} page {page_num} - Surya OCR already exists")
+                        skip = True
+                    elif self.ocr_mode == 'both' and loc_ocr_path.exists() and surya_ocr_path.exists():
+                        self.logger.debug(f"  Skipping {issue_id} page {page_num} - Both OCR types already exist")
+                        skip = True
+
+                if skip:
+                    continue
 
                 # Reconstruct a PageMetadata for the OCR manager
                 page_meta = PageMetadata(
@@ -447,6 +515,8 @@ def main():
     parser.add_argument("--verbose", action="store_true", help="Detailed logging")
     parser.add_argument("--speed", choices=["safe", "standard"], default="safe", help="Download speed profile")
     parser.add_argument("--ocr-batch", action="store_true", help="Run OCR on already-downloaded files")
+    parser.add_argument("--force-ocr", action="store_true", help="Overwrite existing OCR text files")
+    parser.add_argument("--date", dest="ocr_date", help="Target a single issue date for OCR batch (YYYY-MM-DD)")
     parser.add_argument("--json", action="store_true", help="Output results as JSON")
 
     args = parser.parse_args()
@@ -456,7 +526,7 @@ def main():
         if args.json:
             import dataclasses
             print(json.dumps([dataclasses.asdict(r) for r in results], ensure_ascii=False))
-        elif RICH_AVAILABLE:
+        elif RICH_LIVE_OK:
             table = Table(title=f"Search Results for '{args.search}' ({args.source})")
             table.add_column("LCCN", style="cyan", no_wrap=True)
             table.add_column("Title", style="magenta")
@@ -523,7 +593,9 @@ def main():
         retry_failed=args.retry_failed,
         speed=args.speed,
         ocr_mode=args.ocr,
-        max_issues=args.max_issues
+        max_issues=args.max_issues,
+        force_ocr=args.force_ocr,
+        ocr_date=args.ocr_date
     )
 
     if args.ocr_batch:

@@ -1,7 +1,10 @@
 # PaperRouter
 
-**v0.1.0-alpha** — This project is in early alpha. Features may change, and you may encounter bugs. Contributions, bug reports, and feedback are welcome.
+**v0.2.0-alpha** — This project is in early alpha. Features may change, and you may encounter bugs. Contributions, bug reports, and feedback are welcome.
 
+> **Note:** This project is primarily AI-generated ("vibecoded"), with a strong emphasis on utilizing the technology to build a high-quality, robust tool.
+>
+> *Please also note that the screenshots in this README are currently out of date and will be updated in the future.*
 A Python tool for downloading and extracting text from historical newspaper archives. Currently supports the **Library of Congress [Chronicling America](https://chroniclingamerica.loc.gov/)** collection — millions of pages of American newspapers, free and in the public domain.
 
 PaperRouter gives you one PDF per page and can optionally extract the printed text using OCR (see [What is OCR?](#what-is-ocr) below).
@@ -52,19 +55,21 @@ You should see something like `Python 3.12.0`.
 
 ## Installation
 
-**Standard mode** (download newspaper pages as PDFs):
+**Recommended (Windows):** Double-click **`start.bat`**. It creates a virtual environment, installs dependencies, checks for updates, and launches the web interface — all in one click.
+
+**Manual setup:**
 ```bash
 pip install -r requirements.txt
 ```
 
-This installs `requests`, `flask`, and `psutil`.
+This installs `requests`, `flask`, and `psutil`. An optional package, `rich`, provides enhanced CLI table formatting — install it with `pip install rich` if you want prettier command-line output.
 
 **With AI OCR** (local text extraction using Surya — see [OCR Options Explained](#ocr-options-explained)):
 ```bash
 pip install -r requirements.txt surya-ocr pymupdf torch Pillow
 ```
 
-> **Windows shortcut:** You can skip manual setup entirely. Double-click `run_gui.bat` and it will check for Python, install missing dependencies, and launch the web interface automatically.
+> **Note:** `start.bat` manages a `.venv/` virtual environment automatically. The older `run_gui.bat` and `run.bat` launchers still work and will use the `.venv` if present, or fall back to system Python.
 
 ---
 
@@ -78,7 +83,7 @@ The web interface is the recommended way to use PaperRouter, especially if you p
 python web_gui.py
 ```
 
-Or on Windows, double-click **`run_gui.bat`**. Your default browser will open automatically. The server picks the first available port (starting from 5000) — the actual URL is printed in the terminal.
+Or on Windows, double-click **`start.bat`** (recommended) or **`run_gui.bat`**. Your default browser will open automatically. The server picks the first available port (starting from 5000) — the actual URL is printed in the terminal.
 
 ### Step 2: Find your newspaper
 
@@ -113,7 +118,7 @@ The right-hand **Configuration** card controls how downloads work:
 
 | Option | What it does |
 |---|---|
-| **Output Directory** | Where files get saved. Defaults to `downloads/`. Auto-updates to include the newspaper title after a lookup. |
+| **Output Directory** | Where files get saved. Both the GUI and CLI default to a subfolder under `downloads/`. The web GUI names it after the newspaper title (e.g. `downloads/freeland tribune`), while the CLI uses the LCCN (e.g. `downloads/sn87080287`). Your choice is remembered across sessions. You can always set your own path. |
 | **Years** | Leave blank for all available years, or enter a range like `1900-1905` or `1900,1903,1910-1915`. |
 | **Max Issues** | Limit how many issues to download. Leave blank for unlimited. Useful for testing with a small batch first. |
 | **OCR Engine** | Text extraction mode. Select a chip: **None**, **LOC (Fast)**, **Surya (AI)**, or **Both**. See [OCR Options Explained](#ocr-options-explained). |
@@ -133,10 +138,12 @@ Click **Start Download** and watch the progress bar and process console.
 
 ### Step 5: Find your files
 
-Open the output folder (default: `downloads/`). Inside you'll find folders organized by newspaper title and year:
+Open the output folder. Inside you'll find year sub-folders containing the PDFs:
 
 ```
-downloads/Freeland tribune./
+downloads/sn87080287/          # CLI default (uses LCCN)
+  — or —
+downloads/freeland tribune/    # Web GUI default (uses title)
 ├── 1900/
 │   ├── sn87080287_1900-01-04_ed-1_page01.pdf
 │   ├── sn87080287_1900-01-04_ed-1_page02.pdf
@@ -269,6 +276,17 @@ Already downloaded a newspaper but want to add text extraction later? Use batch 
 
 This scans your existing download folder and runs OCR on every page that doesn't already have a text file.
 
+**Force re-run:** Check the "Force re-run" box (GUI) or add `--force-ocr` (CLI) to overwrite existing OCR text files — useful when you want to re-process pages with a different engine.
+
+**Target a single issue:** Add `--date 1900-05-15` (CLI) to process only one issue instead of the entire collection. In the GUI, use the OCR Manager's "Specific date" field.
+
+### OCR Manager (Web GUI)
+
+Below the Controls card, the web interface shows two panels once you have downloaded content:
+
+- **Downloaded Collection** — A read-only summary showing the title, year range, issue count, and page count for everything in your output directory. Refreshes automatically after each download.
+- **OCR Manager** — Click "Scan OCR Coverage" to see per-year OCR completion percentages for both LOC and Surya engines. You can then select specific years, optionally target a single date, and run OCR on just the selected content. The "Select Missing" button auto-checks years that have incomplete OCR for the chosen engine.
+
 ---
 
 ## Output Structure
@@ -312,12 +330,14 @@ usage: downloader.py [-h] [--lccn LCCN] [--source SOURCE] [--years YEARS]
 | `--search QUERY` | Search for newspapers by title |
 | `--info LCCN` | Show details about a specific newspaper |
 | `--years YEARS` | Filter by year range: `1900-1905`, `1900,1903`, or `1893,1895-1900` |
-| `--output DIR` | Output directory (default: `downloads/<lccn>`) |
+| `--output DIR` | Output directory (default: `downloads/<lccn>`, e.g. `downloads/sn87080287`) |
 | `--ocr MODE` | OCR mode: `none` (default), `loc` (archive text), `surya` (local AI), `both` |
 | `--ocr-batch` | Run OCR on already-downloaded files |
 | `--max-issues N` | Limit number of issues to process (`0` = all) |
 | `--speed PROFILE` | Download speed: `safe` (15s delay, default) or `standard` (4s delay) |
 | `--retry-failed` | Re-download previously failed pages |
+| `--force-ocr` | Overwrite existing OCR text files (use with `--ocr-batch`) |
+| `--date YYYY-MM-DD` | Target a single issue date for `--ocr-batch` (e.g. `1900-05-15`) |
 | `--verbose` | Enable detailed debug logging |
 | `--json` | Machine-readable JSON output (for `--search` and `--info`) |
 
@@ -446,10 +466,49 @@ Surya uses a lot of memory. The harness is supposed to prevent this, but if it h
 
 | File | Description |
 |---|---|
-| `run.bat` | CLI launcher. Checks for Python and dependencies, then passes arguments to `downloader.py`. |
-| `run_gui.bat` | Web GUI launcher. Double-click to open the interface in your browser. |
+| `start.bat` | **Recommended.** Creates a virtual environment, installs dependencies, checks for updates, and launches the web GUI. |
+| `run_gui.bat` | Web GUI launcher (legacy). Uses the `.venv` if present, falls back to system Python. |
+| `run.bat` | CLI launcher (legacy). Same venv detection, passes arguments to `downloader.py`. |
 
-Both scripts auto-install required dependencies (`requests`, `flask`, `psutil`) if missing.
+All scripts auto-install required dependencies (`requests`, `flask`, `psutil`) if missing.
+
+---
+
+## Auto-Update
+
+PaperRouter can check for new releases on GitHub and update itself without requiring Git.
+
+### How it works
+
+1. On launch, `start.bat` runs `updater.py --check-only` to check the [GitHub Releases API](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases) for a newer version.
+2. If an update is found, the terminal prints a notice. In the web GUI, a purple banner appears at the top of the page.
+3. Click **Update Now** in the banner (or run `python updater.py --apply` from the command line) to download and apply the update. PaperRouter downloads the release zipball, extracts it, and copies the new files over your installation — preserving your `downloads/`, `.venv/`, and other user data.
+4. After updating, restart the application to use the new version.
+
+### Updater CLI
+
+```bash
+# Check for updates (human-readable)
+python updater.py --check-only
+
+# Check for updates (JSON output)
+python updater.py --check-only --json
+
+# Download and apply the latest release
+python updater.py --apply
+```
+
+### For maintainers — creating a release
+
+Tag a new version and create a GitHub release:
+
+```bash
+git tag v0.3.0
+git push origin v0.3.0
+gh release create v0.3.0 --title "v0.3.0" --notes "Release notes here"
+```
+
+GitHub automatically generates a source zipball for each release. The updater downloads this zipball — no manual asset uploads are needed.
 
 ---
 

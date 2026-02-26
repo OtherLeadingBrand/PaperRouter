@@ -1,5 +1,7 @@
 # Developer Guide
 
+> **Note:** This project is primarily AI-generated ("vibecoded"), with a strong emphasis on utilizing the technology to build a high-quality, robust tool.
+
 This guide describes the architecture of **PaperRouter** and explains how to extend it with new sources or OCR engines.
 
 ## Architecture Overview
@@ -12,20 +14,23 @@ The system is built around a **Pluggable Source Architecture**. This decouples t
 /
 ├── downloader.py          # CLI entry point and DownloadManager orchestration
 ├── web_gui.py             # Flask-based web interface (primary GUI, dark-themed)
+├── updater.py             # Auto-update via GitHub Releases API
 ├── gui.py                 # Legacy Tkinter-based interface (deprecated)
 ├── ocr_engine.py          # Tier 1 & 2 OCR management (SuryaOCREngine, OCRManager)
 ├── harness.py             # Resource-monitored process wrapper for AI workers
-├── run.bat                # Windows CLI launcher
-├── run_gui.bat            # Windows Web GUI launcher (auto-installs deps)
+├── start.bat              # One-click launcher: venv + deps + update check + GUI
+├── run.bat                # Windows CLI launcher (legacy)
+├── run_gui.bat            # Windows Web GUI launcher (legacy)
 ├── requirements.txt       # Python dependencies (requests, flask, psutil)
-├── VERSION                # SemVer version string (e.g. 0.1.0-alpha)
+├── VERSION                # SemVer version string (e.g. 0.2.0-alpha)
 ├── sources/
 │   ├── __init__.py        # Source registry & get_source() factory
 │   ├── base.py            # Abstract base classes and dataclass schemas
 │   └── loc_source.py      # Library of Congress (Chronicling America) implementation
 ├── docs/
-│   └── screenshots/       # README screenshots (auto-generated)
+│   └── screenshots/       # README screenshots
 ├── tests/
+│   ├── test_cli.py        # Comprehensive CLI integration & unit tests
 │   ├── debug_loc.py       # LOC API debugging utilities
 │   ├── check_surya_imports.py
 │   └── list_surya.py
@@ -90,7 +95,7 @@ Represents a single page within an issue.
 
 - **`DownloadResult`** -- `success`, `path`, `error`, `size_bytes`
 - **`OCRResult`** -- `success`, `text_path`, `word_count`, `error`
-- **`TitleResult`** -- `lccn`, `title`, `place`, `dates`, `url`
+- **`TitleResult`** -- `lccn`, `title`, `place`, `dates`, `url`, `thumbnail`
 
 ---
 
@@ -144,6 +149,12 @@ class MySource(NewspaperSource):
         # Save to output_dir with filename:
         #   {date}_ed-{edition}_page{NN}_{source}.txt
         # Return OCRResult(success=False) if the archive has no OCR.
+        ...
+
+    def get_details(self, lccn: str) -> Optional[Dict]:
+        # Fetch basic metadata for a specific LCCN.
+        # Return a dict with keys: title, lccn, start_year, end_year, url, thumbnail.
+        # Return None if the LCCN is not found.
         ...
 
     def build_page_url(self, lccn, date, edition, page_num) -> str:
@@ -270,13 +281,34 @@ The `DownloadManager` maintains a JSON metadata file (`download_metadata.json`) 
   },
   "failed": {
     "1900-01-11_ed-1": "Partial: 3/4"
+  },
+  "failed_pages": {
+    "1900-01-11_ed-1_page04": {
+      "issue_id": "1900-01-11_ed-1",
+      "page_num": 4,
+      "error": "HTTP 503",
+      "failed_at": "2026-02-20T10:15:00"
+    }
   }
 }
 ```
 
 - Issues in `downloaded` with `complete: true` are skipped on subsequent runs
 - Issues in `failed` are logged but not retried unless `--retry-failed` is passed
+- Pages in `failed_pages` are tracked individually and retried when `--retry-failed` is passed
 - The `pages` array is used by `--ocr-batch` to reconstruct `PageMetadata` objects for retroactive OCR
+
+### Web GUI API Endpoints
+
+**`GET /api/metadata?output=<path>&scan_ocr=true|false`**
+
+Reads `download_metadata.json` and returns a year-by-year summary. When `scan_ocr=true`, it also scans the filesystem for `_loc.txt` and `_surya.txt` files to report OCR coverage per year. This endpoint powers the Downloaded Collection summary and OCR Manager panels.
+
+**`GET /api/version`** — Returns `{"version": "0.2.0-alpha"}` from the `VERSION` file.
+
+**`GET /api/update/check`** — Runs `updater.py --check-only --json` as a subprocess and returns the JSON result. Contains `update_available`, `current`, `latest`, and `download_url` fields.
+
+**`POST /api/update/apply`** — Runs `updater.py --apply --json` as a subprocess (120s timeout) and returns the result. The web GUI shows a banner prompting the user to restart after a successful update.
 
 ---
 
@@ -291,3 +323,68 @@ Verify the full pipeline:
 5. **Tier 2 OCR**: `python downloader.py --source mysource --lccn "ID" --ocr surya --max-issues 1`
 6. **OCR batch**: Download first, then `--ocr-batch` -- verify `build_page_url()` reconstructs correct URLs
 7. **Resume**: Run the same download command twice; second run should skip all issues
+
+---
+
+## Running the Test Suite
+
+PaperRouter includes a `unittest`-based test suite in `tests/test_cli.py`. The tests cover search, info, download, harness, edge cases, and helper function unit tests.
+
+```bash
+# Fast unit tests only (no network, ~0.5s)
+python -m unittest tests.test_cli.TestParseYearRange tests.test_cli.TestValidateLCCN tests.test_cli.TestParseVersion tests.test_cli.TestGetLocalVersion -v
+
+# Updater & web API tests (hits GitHub API, ~2s)
+python -m unittest tests.test_cli.TestUpdaterCLI tests.test_cli.TestUpdateEndpoints -v
+
+# Network integration tests (hits LOC API, ~60s)
+python -m unittest tests.test_cli.TestSearch tests.test_cli.TestInfo tests.test_cli.TestEdgeCases -v
+
+# Full suite including downloads (~5 min)
+python -m unittest tests.test_cli -v
+```
+
+Network-dependent tests auto-skip if the LOC API is unreachable, so they are safe to run in offline environments.
+
+---
+
+## Optional Dependencies
+
+| Package | Purpose | When needed |
+|---|---|---|
+| `rich` | Enhanced CLI tables and progress bars | Optional — falls back to plain text |
+| `surya-ocr` | AI OCR engine | Only for `--ocr surya` or `--ocr both` |
+| `pymupdf` | PDF-to-image conversion for Surya | Only for Surya OCR |
+| `torch` | PyTorch ML backend for Surya | Only for Surya OCR |
+| `Pillow` | Image processing for Surya | Only for Surya OCR |
+
+---
+
+## Auto-Update System
+
+The `updater.py` module provides self-update capability via the GitHub Releases API. It uses only `requests` (already a core dependency) and stdlib modules (`zipfile`, `shutil`, `tempfile`).
+
+### Key design decisions
+
+- **No Git required.** The updater downloads the source zipball that GitHub auto-generates for each release tag — users don't need Git installed.
+- **Preserve user data.** The `PRESERVE` set in `updater.py` lists directories and files that are never overwritten during an update: `.venv`, `.git`, `downloads`, `download_metadata.json`, etc.
+- **Version comparison.** `parse_version()` converts a version string like `v0.2.0-alpha` into a comparable tuple `(major, minor, patch, is_release, pre_tag)`. Pre-release versions sort before their release counterpart (e.g. `0.2.0-alpha < 0.2.0`).
+- **Subprocess isolation.** The web GUI runs the updater as a subprocess (`updater.py --apply --json`) so that the Flask server process itself is not disrupted during file replacement.
+
+### Creating a release
+
+```bash
+# 1. Update the VERSION file
+echo "0.3.0" > VERSION
+
+# 2. Commit and tag
+git add VERSION
+git commit -m "Release v0.3.0"
+git tag v0.3.0
+git push origin master --tags
+
+# 3. Create the GitHub release (requires gh CLI)
+gh release create v0.3.0 --title "v0.3.0" --notes "Release notes here"
+```
+
+The updater compares the local `VERSION` file against the `tag_name` from `GET /repos/{owner}/{repo}/releases/latest`.

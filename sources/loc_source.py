@@ -418,21 +418,61 @@ class LOCSource(NewspaperSource):
         results = self.search_titles(f'lccn:"{lccn}"')
         if not results:
             return None
-        
+
         # Use the first match
         r = results[0]
-        
-        # Try to guess start/end years from the dates string (often YYYY-YYYY or YYYY-present)
+
+        # Get accurate date range by sampling the actual issues collection
         start_year = None
         end_year = None
-        if r.dates:
-            try:
-                found_years = re.findall(r'\d{4}', r.dates)
-                if len(found_years) >= 1:
-                    start_year = int(found_years[0])
-                if len(found_years) >= 2:
-                    end_year = int(found_years[1])
-            except: pass
+        try:
+            # Fetch first and last pages of the issues collection to find min/max dates
+            api_url = f"{self.COLLECTION_API_URL}?fa=number_lccn:{lccn}&c=1&fo=json"
+
+            # Get first page (oldest)
+            resp = self.session.get(api_url, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+            results_list = data.get('results', [])
+            if results_list:
+                first_date = results_list[0].get('date', '')
+                if first_date and len(first_date) >= 4:
+                    start_year = int(first_date[:4])
+
+            # Get total count to fetch last page (newest)
+            pagination = data.get('pagination', {})
+            total_items = pagination.get('total', 0)
+            if total_items > 0:
+                last_page = (total_items + self.API_PAGE_SIZE - 1) // self.API_PAGE_SIZE
+                if last_page > 1:
+                    last_url = f"{api_url}&sp={last_page}"
+                    resp = self.session.get(last_url, timeout=30)
+                    resp.raise_for_status()
+                    data = resp.json()
+                    results_list = data.get('results', [])
+                    if results_list:
+                        # Get the last item on the last page
+                        last_date = results_list[-1].get('date', '')
+                        if last_date and len(last_date) >= 4:
+                            end_year = int(last_date[:4])
+                else:
+                    # Only one page, so last item is on first page
+                    if results_list:
+                        last_date = results_list[-1].get('date', '')
+                        if last_date and len(last_date) >= 4:
+                            end_year = int(last_date[:4])
+        except Exception as e:
+            self.logger.warning(f"Could not fetch accurate date range for {lccn}: {e}")
+            # Fallback to extracting from search result dates string
+            if r.dates:
+                try:
+                    found_years = re.findall(r'\d{4}', r.dates)
+                    if len(found_years) >= 1 and not start_year:
+                        start_year = int(found_years[0])
+                    if len(found_years) >= 2 and not end_year:
+                        end_year = int(found_years[1])
+                except:
+                    pass
 
         return {
             'lccn': r.lccn,

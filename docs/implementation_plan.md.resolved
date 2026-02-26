@@ -1,0 +1,218 @@
+# Selective OCR — Implementation Plan (Revised)
+
+## Problem
+
+The "Retroactive OCR" button is broken in multiple compounding ways. A user who sees
+bad OCR on one issue has no path to fix it through the UI. The gaps exist at every
+layer — JavaScript, backend, and missing primitives — and must be addressed in order.
+
+---
+
+## Layer-by-Layer Gap Map
+
+| Fix | Size | File(s) |
+|---|---|---|
+| 1. Pass `years` in `startOCRBatch()` | 1 line | `web_gui.py` (JS) |
+| 2. Filter `year_set` in `run_ocr_batch()` | 3 lines | `downloader.py` |
+| 3. Fix silent OCR chip behavior | Small | `web_gui.py` (JS + HTML) |
+| 4. Add `--force-ocr` flag | Small | `downloader.py` + `web_gui.py` |
+| 5. Read-only collection summary panel | Medium | `web_gui.py` |
+| 6. Issue-level targeting (`--date`) | Medium | `downloader.py` + `web_gui.py` |
+| 7. Full OCR Manager w/ checkboxes | Large | `web_gui.py` |
+
+Items 1–4 are bugs or near-bugs. Items 5–7 are features. **The original plan jumped
+straight to item 7 without the five items above it.**
+
+---
+
+## Phase 1 — Bug Fixes (Do First)
+
+### Fix 1: `startOCRBatch()` silently drops the years field
+
+**File:** [`web_gui.py`](../web_gui.py) — JavaScript, `startOCRBatch()` at line 834
+
+`startDownload()` sends `years: val('years')` but `startOCRBatch()` omits it entirely.
+The years input is visible on screen and looks like it applies, so this is a silent
+confusing bug.
+
+```diff
+ body: JSON.stringify({
+   lccn,
+   source: 'loc',
+   output: val('output'),
+   ocr: getActiveChip('ocr-group') === 'none' ? 'loc' : getActiveChip('ocr-group'),
+   ocr_batch: true
++  years: val('years'),
+ })
+```
+
+---
+
+### Fix 2: `run_ocr_batch()` ignores `self.year_set`
+
+**File:** [`downloader.py`](../downloader.py) — `run_ocr_batch()` at line 414
+
+`self.year_set` is populated from `--years` in `__init__` but is never consulted
+by the batch loop. Even after Fix 1 passes the years through, the backend ignores them.
+
+```diff
+ for issue_id, info in downloaded.items():
++    if self.year_set and int(info['date'][:4]) not in self.year_set:
++        continue
+     issue_pages = info.get('pages', [])
+```
+
+---
+
+### Fix 3: OCR chip silently switches to LOC when "None" is selected
+
+**File:** [`web_gui.py`](../web_gui.py) — JavaScript, `startOCRBatch()` at line 845
+
+```js
+ocr: getActiveChip('ocr-group') === 'none' ? 'loc' : getActiveChip('ocr-group'),
+```
+
+If the user has "None" selected (the default), clicking "Retroactive OCR" runs LOC OCR
+with no indication. The chip still reads "None" on screen.
+
+**Options (pick one):**
+
+- **A (simplest):** Disable the "Retroactive OCR" button when OCR chip is "None", with
+  a tooltip: "Select an OCR engine first." Remove the silent fallback.
+- **B:** Show a confirmation dialog: "No OCR engine selected. Run LOC OCR?"
+
+Option A is cleaner — it prevents confusion rather than explaining it after the fact.
+
+---
+
+### Fix 4: Add `--force-ocr` to overwrite existing OCR files
+
+**Files:** [`downloader.py`](../downloader.py), [`web_gui.py`](../web_gui.py)
+
+`run_ocr_batch()` skips any page where the output `_loc.txt` or `_surya.txt` already
+exists (lines 433–445). There is no way to re-run OCR on a page with bad existing
+output without manually deleting the file first. This is the core blocker for the
+"one bad issue" use case.
+
+**Backend** — add `--force-ocr` CLI flag, pass it into `DownloadManager`, use it
+in `run_ocr_batch()` to skip the existence check:
+
+```diff
++parser.add_argument("--force-ocr", action="store_true",
++    help="Overwrite existing OCR files")
+```
+
+```diff
+-if self.ocr_mode == 'loc' and loc_ocr_path.exists():
+-    skip = True
++if not self.force_ocr and self.ocr_mode == 'loc' and loc_ocr_path.exists():
++    skip = True
+```
+
+**Frontend** — add a "Force re-run" checkbox near the Retroactive OCR button, pass
+`force_ocr: true` in the `startOCRBatch()` request body, and append `--force-ocr`
+in `download_start()` on the server side.
+
+---
+
+## Phase 2 — Visibility (Medium Priority)
+
+### Feature 5: Read-only collection summary
+
+Right now there is no way to see from inside the app what has been downloaded or
+whether OCR exists. Before clicking "Retroactive OCR," the user is flying blind.
+
+**New endpoint: `GET /api/metadata?output=<path>`**
+
+Reads `download_metadata.json` from the given output directory and returns a year
+summary. No filesystem OCR scan is needed for an MVP — the metadata already has
+enough information to show issues and pages per year.
+
+```json
+{
+  "lccn": "sn87080287",
+  "title": "Freeland Tribune",
+  "years": {
+    "1889": { "issues": 12, "pages": 48 },
+    "1890": { "issues": 52, "pages": 208 }
+  },
+  "total_issues": 64,
+  "total_pages": 256
+}
+```
+
+OCR file presence (the `has_loc_ocr` / `has_surya_ocr` counts from the original plan)
+requires scanning the filesystem across year subdirectories. That's useful but adds
+complexity — treat it as a follow-on enhancement, not required for the MVP read.
+
+**Frontend** — add a small "Downloads" info panel below the Controls card. It should:
+
+- Auto-populate when the output directory is set or after a download completes
+- Show year range, issue count, page count
+- Have a "Refresh" link
+
+This panel answers "do I know what I have?" without requiring the full OCR Manager.
+
+---
+
+## Phase 3 — Targeting (Do Later)
+
+### Feature 6: Issue-level targeting for OCR batch
+
+Year-level filtering (Fixes 1 + 2) is still too coarse when a user has one bad issue.
+The `--years` filter will skip other issues in the same year only if they already have
+OCR files. For a targeted re-run the user needs `--date YYYY-MM-DD` (or `--issue`).
+
+**Backend** — add `--date` argument to `main()`, pass it into `DownloadManager`,
+filter by `info['date']` in `run_ocr_batch()`.
+
+**Frontend** — add a "Specific date" input that appears when the user sets years to a
+single year (or always show it, optional). Pass as `date` in the batch request body.
+
+---
+
+### Feature 7: Full OCR Manager panel
+
+The original plan's OCR Manager with year checkboxes, OCR coverage counts, "Select
+Missing," and time estimates is a reasonable long-term feature. It builds naturally on
+top of the collection summary endpoint from Feature 5 (extended to include OCR file
+counts) and the targeting from Feature 6.
+
+It is appropriate after 1–6 are in place. Do not build it first.
+
+---
+
+## Correct User Workflow After All Phases
+
+A user with one bad LOC OCR issue on 1889-05-15 would:
+
+1. Open the app — collection summary shows "1889: 52 issues, 208 pages"
+2. Set Years = `1889`, Date = `1889-05-15`, OCR engine = `Surya (AI)`, check "Force re-run"
+3. Click "Retroactive OCR"
+4. Only that one issue's pages are re-processed with Surya
+
+This is not possible today at any step. Phases 1–3 each unlock one part of it.
+
+---
+
+## What Does Not Change
+
+- The underlying LOC OCR quality is whatever LOC digitized from microfilm. Re-running
+  LOC OCR on a bad page fetches the same text. Surya is the only alternative and
+  requires it to be installed. Nothing in this plan changes that constraint.
+- `run` (normal download) is unaffected by all of the above.
+- Backwards compatibility: `--ocr-batch` without `--years` or `--force-ocr` behaves
+  exactly as today.
+
+---
+
+## Verification
+
+| Phase | Test |
+|---|---|
+| Fix 1 | Open DevTools Network tab, click Retroactive OCR with years set, confirm `years` in POST body |
+| Fix 2 | `--ocr-batch --years 1889` processes only 1889 issues |
+| Fix 3 | With "None" chip active, "Retroactive OCR" is disabled |
+| Fix 4 | `--ocr-batch --force-ocr` overwrites existing `_loc.txt` files |
+| Feature 5 | Summary panel populates after download completes |
+| Feature 6 | `--ocr-batch --years 1889 --date 1889-05-15` processes one issue only |
