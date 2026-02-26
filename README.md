@@ -5,6 +5,7 @@
 > **Note:** This project is primarily AI-generated ("vibecoded"), with a strong emphasis on utilizing the technology to build a high-quality, robust tool.
 >
 > *Please also note that the screenshots in this README are currently out of date and will be updated in the future.*
+
 A Python tool for downloading and extracting text from historical newspaper archives. Currently supports the **Library of Congress [Chronicling America](https://chroniclingamerica.loc.gov/)** collection — millions of pages of American newspapers, free and in the public domain.
 
 PaperRouter gives you one PDF per page and can optionally extract the printed text using OCR (see [What is OCR?](#what-is-ocr) below).
