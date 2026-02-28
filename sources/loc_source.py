@@ -83,7 +83,7 @@ class LOCSource(NewspaperSource):
 
         results = data.get('results', [])
         pagination = data.get('pagination', {})
-        total_items = pagination.get('total', 0)
+        total_items = pagination.get('of', pagination.get('total', 0))
         
         def process_json_data(data):
             batch = []
@@ -118,7 +118,7 @@ class LOCSource(NewspaperSource):
         all_issues.extend(process_json_data(data))
 
         # 2. Parallel fetch remaining pages
-        total_pages = (total_items + self.API_PAGE_SIZE - 1) // self.API_PAGE_SIZE
+        total_pages = pagination.get('total', 1)
         if total_pages > 1:
             self.logger.info(f"  Parallel fetching {total_pages - 1} remaining pages...")
             
@@ -129,16 +129,18 @@ class LOCSource(NewspaperSource):
             def fetch_page(p):
                 with fetch_lock:
                     now = time.time()
-                    sleep_time = max(0, 2.0 - (now - last_fetch_time[0]))
+                    sleep_time = max(0, 3.0 - (now - last_fetch_time[0]))
                     last_fetch_time[0] = now + sleep_time
                 if sleep_time > 0:
                     time.sleep(sleep_time)
 
+                # The LOC API uses 'sp' as the page number for this endpoint.
                 page_url = f"{api_url}&sp={p}"
                 try:
                     resp = self.session.get(page_url, timeout=30)
                     resp.raise_for_status()
-                    return process_json_data(resp.json())
+                    batch = process_json_data(resp.json())
+                    return batch
                 except Exception as e:
                     self.logger.error(f"    Failed to fetch page {p}: {e}")
                     return []
@@ -441,11 +443,11 @@ class LOCSource(NewspaperSource):
 
             # Get total count to fetch last page (newest)
             pagination = data.get('pagination', {})
-            total_items = pagination.get('total', 0)
+            total_items = pagination.get('of', pagination.get('total', 0))
             if total_items > 0:
-                last_page = (total_items + self.API_PAGE_SIZE - 1) // self.API_PAGE_SIZE
-                if last_page > 1:
-                    last_url = f"{api_url}&sp={last_page}"
+                if total_items > 1:
+                    # With c=1, each page has one item, so sp=total_items gets the last page/item.
+                    last_url = f"{api_url}&sp={total_items}"
                     resp = self.session.get(last_url, timeout=30)
                     resp.raise_for_status()
                     data = resp.json()

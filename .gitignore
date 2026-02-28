@@ -45,3 +45,7 @@ test_years.py
 .claude/
 *.swp
 *.swo
+
+# Debug/Repro
+repro_*
+check_pagination.py
