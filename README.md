@@ -4,7 +4,6 @@
 
 > **Note:** This project is primarily AI-generated ("vibecoded"), with a strong emphasis on utilizing the technology to build a high-quality, robust tool.
 >
-> *Please also note that the screenshots in this README are currently out of date and will be updated in the future.*
 
 A Python tool for downloading and extracting text from historical newspaper archives. Currently supports the **Library of Congress [Chronicling America](https://chroniclingamerica.loc.gov/)** collection — millions of pages of American newspapers, free and in the public domain.
 
@@ -134,10 +133,20 @@ Click **Start Download** and watch the progress bar and process console.
 ![Download in progress showing progress bar and log output](docs/screenshots/05_download_progress.png)
 
 - Downloads are intentionally paced (15-second delay on Safe) to respect the Library of Congress servers.
-- Click **Stop** at any time. Your progress is saved automatically, and you can resume later by clicking Start Download again — already-downloaded pages are skipped.
+- Click **Stop** at any time. Your progress is saved automatically (even if OCR is interrupted), and you can resume later by clicking Start Download again — already-downloaded pages and completed OCR tasks are skipped.
 - The **Retroactive OCR** button runs OCR on files you have already downloaded, without re-downloading them (see [Retroactive OCR](#retroactive-ocr-batch-mode)).
 
-### Step 5: Find your files
+### Step 5: OCR Manager & Coverage
+
+Below the configuration card, you can scan your existing collection to see which years are missing OCR text.
+
+![OCR Manager showing coverage and batch options](docs/screenshots/06_ocr_manager.png)
+
+1. Click **Scan OCR Coverage** to analyze your `downloads/` folder.
+2. Use the **Select Missing** button to automatically check years that need processing.
+3. Click **Retroactive OCR** to start the batch job.
+
+### Step 6: Find your files
 
 Open the output folder. Inside you'll find year sub-folders containing the PDFs:
 
@@ -281,13 +290,6 @@ This scans your existing download folder and runs OCR on every page that doesn't
 
 **Target a single issue:** Add `--date 1900-05-15` (CLI) to process only one issue instead of the entire collection. In the GUI, use the OCR Manager's "Specific date" field.
 
-### OCR Manager (Web GUI)
-
-Below the Controls card, the web interface shows two panels once you have downloaded content:
-
-- **Downloaded Collection** — A read-only summary showing the title, year range, issue count, and page count for everything in your output directory. Refreshes automatically after each download.
-- **OCR Manager** — Click "Scan OCR Coverage" to see per-year OCR completion percentages for both LOC and Surya engines. You can then select specific years, optionally target a single date, and run OCR on just the selected content. The "Select Missing" button auto-checks years that have incomplete OCR for the chosen engine.
-
 ---
 
 ## Output Structure
@@ -310,7 +312,7 @@ downloads/sn87080287/
 
 ### Resume behavior
 
-The `download_metadata.json` file tracks every successfully downloaded issue. If you stop and restart, previously completed issues are automatically skipped. Use `--retry-failed` (or check "Retry Failed" in the GUI) to re-attempt issues that had errors.
+The `download_metadata.json` file tracks every successfully downloaded issue and its OCR status. If you stop and restart, previously completed issues and individual pages with both PDF and OCR (if enabled) are automatically skipped. This ensures that a crash during the OCR phase doesn't lose your PDF download progress. Use `--retry-failed` (or check "Retry Failed" in the GUI) to re-attempt issues that had errors.
 
 ---
 

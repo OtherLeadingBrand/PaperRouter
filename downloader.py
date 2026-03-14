@@ -210,6 +210,62 @@ class DownloadManager:
     def _rate_limit(self, scan=False):
         time.sleep(self.scan_delay if scan else self.download_delay)
 
+    def _process_ocr_for_issue(self, issue_id: str, info: Dict) -> None:
+        """Run OCR on all pages of a downloaded issue.
+
+        Skips pages whose output files already exist on disk (unless
+        self.force_ocr is set).  Sets info['ocr_complete'] = True when
+        every expected file is present after processing; the caller is
+        responsible for persisting metadata via _save_metadata().
+        """
+        date = info['date']
+        edition = int(info['edition'])
+        issue_pages = info.get('pages', [])
+        year_dir = self.output_dir / date[:4]
+
+        if self.force_ocr:
+            info.pop('ocr_complete', None)
+
+        for page_info in issue_pages:
+            page_num = page_info['page']
+            pdf_path = self.output_dir / page_info['file']
+
+            base_name = f"{date}_ed-{edition}_page{page_num:02d}"
+            loc_done   = (year_dir / f"{base_name}_loc.txt").exists()
+            surya_done = (year_dir / f"{base_name}_surya.txt").exists()
+
+            if not self.force_ocr:
+                if self.ocr_mode == 'loc'  and loc_done:
+                    self.logger.debug(f"  Skipping {issue_id} page {page_num} - LOC OCR already exists")
+                    continue
+                if self.ocr_mode == 'surya' and surya_done:
+                    self.logger.debug(f"  Skipping {issue_id} page {page_num} - Surya OCR already exists")
+                    continue
+                if self.ocr_mode == 'both'  and loc_done and surya_done:
+                    self.logger.debug(f"  Skipping {issue_id} page {page_num} - Both OCR types already exist")
+                    continue
+
+            page_meta = PageMetadata(
+                issue_date=date,
+                edition=edition,
+                page_num=page_num,
+                url=self.source.build_page_url(self.lccn, date, edition, page_num),
+                lccn=self.lccn,
+            )
+            self.ocr_manager.process_page(page_meta, self.source, self.ocr_mode, pdf_path=pdf_path)
+
+        # Mark complete only when every expected file is confirmed on disk.
+        all_done = all(
+            (self.ocr_mode not in ('loc',  'both') or (year_dir / f"{date}_ed-{edition}_page{pi['page']:02d}_loc.txt").exists()) and
+            (self.ocr_mode not in ('surya', 'both') or (year_dir / f"{date}_ed-{edition}_page{pi['page']:02d}_surya.txt").exists())
+            for pi in issue_pages
+        )
+        if all_done and issue_pages:
+            info['ocr_complete'] = True
+            self.logger.info(f"  OCR complete for {issue_id}")
+        elif issue_pages:
+            self.logger.warning(f"  OCR incomplete for {issue_id} - some pages failed; will retry next run")
+
     def _fetch_newspaper_issues(self) -> List[IssueMetadata]:
         issues = self.source.fetch_issues(self.lccn, year_set=self.year_set)
         if issues:
@@ -258,11 +314,18 @@ class DownloadManager:
                 issue_id = f"{issue.date}_ed-{issue.edition}"
                 self.logger.info(f"\n[{i}/{len(issues)}] Processing {issue_id}")
 
-                if issue_id in self.metadata['downloaded'] and not self.retry_failed:
-                    if self.ocr_mode == 'none':
-                        self.logger.info(f"  Skipping (already downloaded)")
+                if issue_id in self.metadata['downloaded'] and not self.retry_failed and not self.force_ocr:
+                    info = self.metadata['downloaded'][issue_id]
+                    if self.ocr_mode == 'none' or info.get('ocr_complete'):
+                        self.logger.info(f"  Skipping (already complete)")
                         self.stats['skipped'] += 1
                         continue
+                    # PDFs already downloaded but OCR is not finished — resume OCR only.
+                    self.logger.info(f"  PDFs already downloaded; resuming OCR for {issue_id}...")
+                    self._process_ocr_for_issue(issue_id, info)
+                    self._save_metadata()
+                    self.stats['skipped'] += 1
+                    continue
 
                 pages = self.source.get_pages_for_issue(issue)
                 if not pages:
@@ -363,24 +426,23 @@ class DownloadManager:
                 success_count = len(download_results)
 
                 if success_count == len(pages):
-                    # Now trigger batched OCR for the whole issue
-                    if self.ocr_mode != 'none':
-                        self.ocr_manager.process_issue_batch(
-                            pages=[r['page'] for r in download_results],
-                            source=self.source,
-                            mode=self.ocr_mode,
-                            pdf_paths=[r['path'] for r in download_results]
-                        )
-
-                    self.metadata['downloaded'][issue_id] = {
+                    # Save PDF completion to disk BEFORE starting OCR.
+                    # If OCR crashes mid-run, the PDF progress is not lost.
+                    issue_meta = {
                         'date': issue.date,
                         'edition': issue.edition,
                         'complete': True,
                         'downloaded_at': datetime.now().isoformat(),
                         'pages': downloaded_pages_meta
                     }
+                    self.metadata['downloaded'][issue_id] = issue_meta
                     if issue_id in self.metadata['failed']:
                         del self.metadata['failed'][issue_id]
+                    self._save_metadata()
+
+                    if self.ocr_mode != 'none':
+                        self._process_ocr_for_issue(issue_id, issue_meta)
+                        self._save_metadata()
                 else:
                     self.metadata['failed'][issue_id] = f"Partial: {success_count}/{len(pages)}"
 
@@ -410,7 +472,6 @@ class DownloadManager:
         self.logger.info("=" * 70)
 
         issues_count = 0
-        pages_count = 0
 
         downloaded = self.metadata.get('downloaded', {})
         if not downloaded:
@@ -436,51 +497,13 @@ class DownloadManager:
         self.logger.info(f"Will process {len(eligible)} issues...")
 
         for issue_id, info in eligible:
-            issue_pages = info.get('pages', [])
             issues_count += 1
-            self.logger.info(f"\n[{issues_count}/{len(eligible)}] Processing {issue_id} ({len(issue_pages)} pages)...")
-
-            for page_info in issue_pages:
-                page_num = page_info['page']
-                page_file = page_info['file']
-                pdf_path = self.output_dir / page_file
-
-                # Check if OCR text already exists for this page based on mode
-                year_dir = self.output_dir / str(info['date'][:4])
-                base_name = f"{info['date']}_ed-{info['edition']}_page{page_num:02d}"
-                loc_ocr_path = year_dir / f"{base_name}_loc.txt"
-                surya_ocr_path = year_dir / f"{base_name}_surya.txt"
-
-                skip = False
-                if not self.force_ocr:
-                    if self.ocr_mode == 'loc' and loc_ocr_path.exists():
-                        self.logger.debug(f"  Skipping {issue_id} page {page_num} - LOC OCR already exists")
-                        skip = True
-                    elif self.ocr_mode == 'surya' and surya_ocr_path.exists():
-                        self.logger.debug(f"  Skipping {issue_id} page {page_num} - Surya OCR already exists")
-                        skip = True
-                    elif self.ocr_mode == 'both' and loc_ocr_path.exists() and surya_ocr_path.exists():
-                        self.logger.debug(f"  Skipping {issue_id} page {page_num} - Both OCR types already exist")
-                        skip = True
-
-                if skip:
-                    continue
-
-                # Reconstruct a PageMetadata for the OCR manager
-                page_meta = PageMetadata(
-                    issue_date=info['date'],
-                    edition=info['edition'],
-                    page_num=page_num,
-                    url=self.source.build_page_url(self.lccn, info['date'], info['edition'], page_num),
-                    lccn=self.lccn
-                )
-
-                self.ocr_manager.process_page(page_meta, self.source, self.ocr_mode, pdf_path=pdf_path)
-                pages_count += 1
+            self.logger.info(f"\n[{issues_count}/{len(eligible)}] Processing {issue_id} ({len(info.get('pages', []))} pages)...")
+            self._process_ocr_for_issue(issue_id, info)
+            self._save_metadata()
 
         self.logger.info("\n" + "=" * 70)
-        self.logger.info(f"OCR batch complete.")
-        self.logger.info(f"Processed {pages_count} pages across {issues_count} issues.")
+        self.logger.info(f"OCR batch complete. Processed {issues_count} issues.")
         self.logger.info("=" * 70)
 
 

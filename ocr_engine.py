@@ -175,6 +175,8 @@ class OCRManager:
                 res = source.fetch_ocr_text(page, year_dir)
                 if res.success:
                     self.logger.info(f"  Page {page.page_num} - Tier 1 OCR: Success, {res.word_count} words")
+                else:
+                    self.logger.warning(f"  Page {page.page_num} - Tier 1 OCR: Failed: {res.error}")
 
         # Tier 2 (Surya) is where batching really helps GPU throughput
         if mode in ('surya', 'both'):

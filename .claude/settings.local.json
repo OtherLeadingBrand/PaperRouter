@@ -5,7 +5,11 @@
       "Bash(python downloader.py:*)",
       "Bash(ls:*)",
       "Bash(curl:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(find /c/source/PaperRouter/sources -type f -name *.py)",
+      "Bash(find /c/source/PaperRouter -name *test*.py -o -name test_* -o -name *_test.py)",
+      "Bash(find /c/source/PaperRouter -type f \\\\\\(-name *.bat -o -name *.sh \\\\\\))",
+      "WebSearch"
     ]
   }
 }

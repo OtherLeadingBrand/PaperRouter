@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2-alpha] - 2026-03-14
+
+### Added
+- **UI Screenshots**: Refreshed all README and documentation screenshots to accurately reflect the latest Web GUI and OCR Manager features.
+- **Dependency Management**: Refactored dependency checking in the GUI to be more robust and modular.
+
+### Fixed
+- **Metadata Persistence**: Improved reliability of metadata saving in the downloader, ensuring progress is correctly tracked for large collections.
+- **OCR Logging**: Enhanced logging for OCR failures to provide better diagnostics during processing.
+- **Cleanup**: Removed obsolete `docs/TESTING_GUIDE.md` to streamline documentation.
+
 ## [0.2.1-alpha] - 2026-02-27
 
 ### Fixed

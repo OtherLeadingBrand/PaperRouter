@@ -717,6 +717,78 @@ class DownloaderGUI:
 # Main
 # ------------------------------------------------------------------
 
+def _check_and_install_dependencies() -> bool:
+    """Check required packages and offer to install any that are missing.
+
+    Returns True when all dependencies are satisfied, False when the user
+    declined or installation failed (caller should exit).
+    """
+    import importlib.util
+
+    REQUIRED = [
+        ("requests", "requests>=2.31.0"),
+        ("flask",    "flask>=3.0.0"),
+        ("psutil",   "psutil>=5.9.0"),
+    ]
+
+    missing = [
+        (name, spec) for name, spec in REQUIRED
+        if importlib.util.find_spec(name) is None
+    ]
+
+    if not missing:
+        return True
+
+    pkg_list = "\n".join(f"  \u2022 {spec}" for _, spec in missing)
+
+    tmp = tk.Tk()
+    tmp.withdraw()
+
+    if not messagebox.askyesno(
+        "Missing Dependencies",
+        f"The following required packages are not installed:\n\n{pkg_list}\n\n"
+        "Install them now?",
+        parent=tmp,
+    ):
+        tmp.destroy()
+        return False
+
+    # Show a status window while pip runs (blocks the event loop, but that is
+    # acceptable for a short install dialog before the main window opens).
+    install_win = tk.Toplevel(tmp)
+    install_win.title("Installing Dependencies")
+    install_win.geometry("380x100")
+    install_win.resizable(False, False)
+    ttk.Label(
+        install_win,
+        text="Installing packages, please wait…\nThis may take a minute.",
+        justify="center",
+        padding=20,
+    ).pack(expand=True)
+    install_win.update()  # render before blocking
+
+    packages = [spec for _, spec in missing]
+    try:
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install"] + packages,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+        )
+        install_win.destroy()
+        tmp.destroy()
+        return True
+    except subprocess.CalledProcessError:
+        install_win.destroy()
+        messagebox.showerror(
+            "Installation Failed",
+            "Could not install packages automatically.\n\n"
+            f"Please run manually:\n  pip install {' '.join(packages)}",
+            parent=tmp,
+        )
+        tmp.destroy()
+        return False
+
+
 def main():
     if not DOWNLOADER_SCRIPT.exists():
         tmp = tk.Tk()
@@ -729,31 +801,8 @@ def main():
         tmp.destroy()
         sys.exit(1)
 
-    try:
-        import requests  # noqa: F401
-    except ImportError:
-        tmp = tk.Tk()
-        tmp.withdraw()
-        if messagebox.askyesno(
-            "Missing Dependency",
-            "The 'requests' library is required.\n\nInstall it now?",
-        ):
-            try:
-                subprocess.check_call(
-                    [sys.executable, "-m", "pip", "install", "requests"]
-                )
-            except subprocess.CalledProcessError:
-                messagebox.showerror(
-                    "Error",
-                    "Failed to install requests.\n\n"
-                    "Run manually: pip install requests",
-                )
-                tmp.destroy()
-                sys.exit(1)
-        else:
-            tmp.destroy()
-            sys.exit(1)
-        tmp.destroy()
+    if not _check_and_install_dependencies():
+        sys.exit(1)
 
     root = tk.Tk()
     try:
